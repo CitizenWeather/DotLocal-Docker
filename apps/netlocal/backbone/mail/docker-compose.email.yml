@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Common to all tiers (>=2)
+  stalwart:
+    image: stalwartlabs/mail-server:latest
+    profiles: ["tier2", "tier3", "tier4"]
+    environment:
+      - STALWART_DOMAIN=${NETLOCAL_ROOT_DOMAIN}
+    # ... config
+
+  webmail:
+    image: lscr.io/linuxserver/snappymail:latest
+    profiles: ["tier2", "tier3", "tier4"]
+
+  # Tier 1 only
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: ["tier1"]
+
+  # Tier 3 extra (full internal with Dovecot for larger mailboxes)
+  dovecot:
+    image: dovecot/dovecot:latest
+    profiles: ["tier3"]
+
+  # Tier 4 extra (external relay)
+  external-relay:
+    image: ghcr.io/mailu/postfix:latest
+    profiles: ["tier4"]

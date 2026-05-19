@@ -1,0 +1,24 @@
+# Backbone CA using Smallstep
+services:
+  smallstep-ca:
+    image: smallstep/step-ca:0.27.0
+    container_name: netlocal_ca
+    volumes:
+      - ca_data:/home/step
+    environment:
+      - STEPPATH=/home/step
+      - DOCKER_STEPCA_INIT_NAME=NetLocal Root CA
+      - DOCKER_STEPCA_INIT_DNS_NAMES=ca.${NETLOCAL_ROOT_DOMAIN:-net.local},localhost
+      - DOCKER_STEPCA_INIT_PROVISIONER_NAME=acme
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.4
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "step", "ca", "health"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ca.rule=Host(`ca.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.ca.loadbalancer.server.port=443"
+      - "netlocal.layer=backbone"
+      - "netlocal.component=ca"

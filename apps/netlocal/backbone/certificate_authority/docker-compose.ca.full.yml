@@ -1,0 +1,17 @@
+# Backbone CA using OpenXPKI (heavier, more enterprise)
+services:
+  openxpki:
+    image: openxpki/openxpki:latest
+    container_name: netlocal_ca
+    environment:
+      - OPENXPKI_REALM=default
+    volumes:
+      - ca_data:/etc/openxpki
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.4
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ca.rule=Host(`ca.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "netlocal.layer=backbone"

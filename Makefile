@@ -1,48 +1,120 @@
-REPO_DIR=$(shell pwd)
+# Makefile for NetLocal
+include .env
+export
 
-help:
-	@echo "\SCRIPTS\n"
-	@echo "make github.contributors  	# pull a list of all contributors"
-	@echo "make github.issues			# pull a list of all issue creators"
-	@echo "make github.repos			# pull a list of our repos"
-	@echo "make github.traction			# get a history of stargazers for our individual repos"
+# Base compose files
+COMPOSE_FILES = -f docker-compose.base.yml
 
-github.contributors.%:
-	curl -sS https://api.github.com/repos/supabase/$*/contributors \
-	| jq -r 'map_values({ username: .login }) \
-	| unique \
-	| sort_by(.username)' \
-	> $(REPO_DIR)/web/src/data/contributors/$*.json
+# Add backbone DNS based on implementation
+ifeq ($(DNS_IMPLEMENTATION),coredns)
+    COMPOSE_FILES += -f docker-compose.dns.coredns.yml
+else ifeq ($(DNS_IMPLEMENTATION),bind)
+    COMPOSE_FILES += -f docker-compose.dns.bind.yml
+else ifeq ($(DNS_IMPLEMENTATION),knot)
+    COMPOSE_FILES += -f docker-compose.dns.knot.yml
+else
+    $(error Unsupported DNS_IMPLEMENTATION: $(DNS_IMPLEMENTATION))
+endif
 
-.PHONY: github.rcontributorsepos
-github.contributors: \
-	github.contributors.supabase \
-	github.contributors.supabase-js \
-	github.contributors.supabase-py \
-	github.contributors.supabase-flutter \
-	github.contributors.supabase-dart
+# Add CA based on implementation
+ifeq ($(CA_IMPLEMENTATION),smallstep)
+    COMPOSE_FILES += -f docker-compose.ca.smallstep.yml
+else ifeq ($(CA_IMPLEMENTATION),openxpki)
+    COMPOSE_FILES += -f docker-compose.ca.openxpki.yml
+else ifeq ($(CA_IMPLEMENTATION),vault)
+    COMPOSE_FILES += -f docker-compose.ca.vault.yml
+else
+    $(error Unsupported CA_IMPLEMENTATION: $(CA_IMPLEMENTATION))
+endif
 
-github.issues:
-	curl -sS https://api.github.com/repos/supabase/supabase/issues \
-	| jq -r 'map_values({username: .user.login, avatar_url: .user.avatar_url}) \
-	| unique \
-	| sort_by(.username)' \
-	> $(REPO_DIR)/web/src/data/contributors/issues.json
+# Add registry (PowerDNS is default)
+ifeq ($(REGISTRY_IMPLEMENTATION),powerdns)
+    COMPOSE_FILES += -f docker-compose.registry.powerdns.yml
+else ifeq ($(REGISTRY_IMPLEMENTATION),knot)
+    COMPOSE_FILES += -f docker-compose.registry.knot.yml
+endif
 
-.PHONY: github.repos
-github.repos: \
-	github.repos.supabase \
-	github.repos.realtime  \
-	github.repos.postgres \
-	github.repos.postgres-meta
+# Add authorities (policy, dashboard, health)
+COMPOSE_FILES += -f docker-compose.authorities.yml
 
-github.repos.%:
-	curl -sS https://api.github.com/repos/supabase/$* \
-	> $(REPO_DIR)/web/src/data/repos/$*.json
+# Add essentials (gateway, data, messaging, dns forwarder)
+COMPOSE_FILES += -f docker-compose.essentials.yml
 
-github.traction:
-	cd "$(REPO_DIR)"/web && \
-	npm run traction
+# Add fabric
+COMPOSE_FILES += -f docker-compose.fabric.yml
 
-dev:
-	vercel dev --listen 8080 --local-config vercel-local.json
+# Add email tier (based on EMAIL_TIER)
+ifeq ($(EMAIL_TIER),1)
+    COMPOSE_FILES += --profile tier1 -f docker-compose.email.yml
+else ifeq ($(EMAIL_TIER),2)
+    COMPOSE_FILES += --profile tier2 -f docker-compose.email.yml
+else ifeq ($(EMAIL_TIER),3)
+    COMPOSE_FILES += --profile tier3 -f docker-compose.email.yml
+else ifeq ($(EMAIL_TIER),4)
+    COMPOSE_FILES += --profile tier4 -f docker-compose.email.yml
+endif
+
+# Add variants (lite/heavy) based on CACHE_IMPLEMENTATION etc.
+ifneq ($(CACHE_IMPLEMENTATION),redis)
+    ifeq ($(CACHE_IMPLEMENTATION),redis-stack)
+        COMPOSE_FILES += -f docker-compose.variants.yml --profile heavy-redis
+    endif
+endif
+
+# Add observability if enabled
+ifeq ($(ENABLE_OBSERVABILITY),true)
+    COMPOSE_FILES += -f docker-compose.observability.yml
+endif
+
+# Add sibling mirror if enabled
+ifeq ($(ENABLE_SIBLING),true)
+    COMPOSE_FILES += -f docker-compose.sibling.yml
+endif
+
+# Add extensions by tag (optional, passed as EXTENSION_TAGS environment variable)
+ifdef EXTENSION_TAGS
+    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += --profile tag-$(tag)))
+    COMPOSE_FILES += -f docker-compose.extensions.yml
+endif
+
+# Targets
+.PHONY: up down restart status logs clean bootstrap switch-dns switch-ca switch-cache
+
+up:
+	docker compose $(COMPOSE_FILES) up -d
+
+down:
+	docker compose $(COMPOSE_FILES) down
+
+restart: down up
+
+status:
+	docker compose $(COMPOSE_FILES) ps
+
+logs:
+	docker compose $(COMPOSE_FILES) logs -f
+
+clean: down
+	docker compose $(COMPOSE_FILES) down -v
+	rm -rf volumes/*
+
+bootstrap:
+	./scripts/bootstrap.sh
+
+switch-dns:
+	@echo "Switching DNS from $(DNS_IMPLEMENTATION) to $(NEW_DNS)"
+	sed -i 's/^DNS_IMPLEMENTATION=.*/DNS_IMPLEMENTATION=$(NEW_DNS)/' .env
+	make down
+	make up
+
+switch-ca:
+	@echo "Switching CA from $(CA_IMPLEMENTATION) to $(NEW_CA)"
+	sed -i 's/^CA_IMPLEMENTATION=.*/CA_IMPLEMENTATION=$(NEW_CA)/' .env
+	make down
+	make up
+
+switch-cache:
+	@echo "Switching cache from $(CACHE_IMPLEMENTATION) to $(NEW_CACHE)"
+	sed -i 's/^CACHE_IMPLEMENTATION=.*/CACHE_IMPLEMENTATION=$(NEW_CACHE)/' .env
+	make down
+	make up

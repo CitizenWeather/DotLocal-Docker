@@ -1,0 +1,19 @@
+# docker-compose.variants.yml
+# Overrides for heavy variants (e.g., Redis Stack instead of Redis).
+# Use by setting CACHE_IMPLEMENTATION=redis-stack in .env and including this file.
+services:
+  # Heavy Redis (Redis Stack)
+  redis-stack:
+    image: redis/redis-stack:latest
+    profiles: ["heavy-redis"]
+    container_name: netlocal_redis
+    environment:
+      - REDIS_ARGS=--appendonly yes
+    volumes:
+      - cache_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.layer=essentials"
+    # When used, it replaces the standard redis service.
+    # The makefile should include this file and set container_name accordingly.

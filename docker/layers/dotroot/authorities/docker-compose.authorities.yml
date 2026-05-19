@@ -1,0 +1,75 @@
+# docker-compose.authorities.yml
+# Domain registry, policy engine, dashboard, health.
+# Note: DNS and CA are separate layers; this file assumes they exist.
+services:
+  # Registry (PowerDNS) – authoritative for delegated zones
+  powerdns:
+    image: powerdns/pdns-auth-mysql:4.8.0
+    container_name: netlocal_powerdns
+    depends_on:
+      - postgres   # from essentials
+    environment:
+      - PDNS_gmysql_host=postgres
+      - PDNS_gmysql_port=5432
+      - PDNS_gmysql_user=powerdns
+      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
+      - PDNS_gmysql_dbname=powerdns
+      - PDNS_api=yes
+      - PDNS_api_key=${POWERDNS_API_KEY}
+      - PDNS_webserver=yes
+      - PDNS_webserver_address=0.0.0.0
+      - PDNS_webserver_password=${POWERDNS_API_KEY}
+    networks:
+      - localnet_backbone
+      - localnet_default
+    volumes:
+      - registry_data:/var/lib/powerdns
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.powerdns.loadbalancer.server.port=8081"
+
+  # External internet policy (lite version: iptables, can be swapped with OPA)
+  policy-proxy:
+    image: alpine:latest
+    container_name: netlocal_policy_proxy
+    command: /bin/sh -c "apk add iptables && echo 1 > /proc/sys/net/ipv4/ip_forward && iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && iptables -P FORWARD DROP && iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT && tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.layer=authorities"
+      - "netlocal.policy.egress=allow"   # allow itself
+    # In a real OPA setup, this would be replaced with a sidecar.
+
+  # Unified dashboard (Heimdall)
+  heimdall:
+    image: linuxserver/heimdall:2.5.9
+    container_name: netlocal_heimdall
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - heimdall_data:/config
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.heimdall.rule=Host(`dashboard.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80"
+
+  # Health aggregator (simple endpoint)
+  health:
+    image: alpine:latest
+    container_name: netlocal_health
+    command: /bin/sh -c "apk add curl && mkdir -p /www && while true; do STATUS=200; for svc in powerdns postgres redis minio nats; do if ! curl -s --connect-timeout 2 http://$$svc:8080/health >/dev/null; then STATUS=503; fi; done; echo \"HTTP/1.1 $$STATUS OK\r\nContent-Type: text/plain\r\n\r\n$$STATUS\" > /www/health; sleep 10; done"
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.health.rule=Host(`health.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"

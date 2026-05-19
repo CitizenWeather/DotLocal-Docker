@@ -1,0 +1,61 @@
+# docker-compose.fabric.yml
+# Default internet plumbing: ISP router, transparent cache, NTP, WHOIS, status page.
+services:
+  default-router:
+    image: alpine:latest
+    container_name: netlocal_router
+    command: /bin/sh -c "apk add iptables && echo 1 > /proc/sys/net/ipv4/ip_forward && iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.layer=fabric"
+
+  squid:
+    image: sameersbn/squid:latest
+    container_name: netlocal_squid
+    volumes:
+      - ./config/fabric/squid/squid.conf:/etc/squid/squid.conf:ro
+      - squid_data:/var/spool/squid
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.layer=fabric"
+
+  chrony:
+    image: cturra/ntp:latest
+    container_name: netlocal_chrony
+    environment:
+      - NTP_SERVERS=time.cloudflare.com,pool.ntp.org
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.layer=fabric"
+
+  whoisd:
+    image: alpine:latest
+    container_name: netlocal_whoisd
+    command: /bin/sh -c "apk add whois whoisd && echo 'domain: *.${NETLOCAL_ROOT_DOMAIN:-net.local}\norganisation: NetLocal\n' > /tmp/whois.db && whoisd -d /tmp/whois.db -p 43 -f"
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whois.rule=Host(`whois.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: netlocal_uptime_kuma
+    volumes:
+      - uptimekuma_data:/app/data
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime.rule=Host(`status.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.uptime.loadbalancer.server.port=3001"
