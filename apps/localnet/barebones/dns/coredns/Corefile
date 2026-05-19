@@ -1,0 +1,10 @@
+.:53 {
+    forward . 169.254.0.3
+    log
+    errors
+}
+
+${NETLOCAL_ROOT_DOMAIN:-net.local}:53 {
+    file /etc/coredns/zones/${NETLOCAL_ROOT_DOMAIN:-net.local}.zone
+    log
+}

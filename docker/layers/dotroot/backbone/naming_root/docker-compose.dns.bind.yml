@@ -1,9 +1,0 @@
-services:
-  dns:
-    image: ubuntu/bind9:latest
-    container_name: netlocal_dns
-    volumes:
-      - ./config/dns/bind/named.conf:/etc/bind/named.conf:ro
-      - ./config/dns/bind/zones:/etc/bind/zones:ro
-    networks:
-      - localnet_backbone

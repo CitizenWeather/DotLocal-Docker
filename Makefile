@@ -1,84 +1,64 @@
-# Makefile for NetLocal
 include .env
 export
 
-# Base compose files
-COMPOSE_FILES = -f docker-compose.base.yml
+# Base compose files (networks)
+COMPOSE_BASE = -f core/networks.yml
 
-# Add backbone DNS based on implementation
-ifeq ($(DNS_IMPLEMENTATION),coredns)
-    COMPOSE_FILES += -f docker-compose.dns.coredns.yml
-else ifeq ($(DNS_IMPLEMENTATION),bind)
-    COMPOSE_FILES += -f docker-compose.dns.bind.yml
-else ifeq ($(DNS_IMPLEMENTATION),knot)
-    COMPOSE_FILES += -f docker-compose.dns.knot.yml
-else
-    $(error Unsupported DNS_IMPLEMENTATION: $(DNS_IMPLEMENTATION))
-endif
+# Helper to include an app if its directory exists
+define include_app
+$(if $(wildcard apps/$(1)/$(2)/docker-compose.yml),-f apps/$(1)/$(2)/docker-compose.yml)
+endef
 
-# Add CA based on implementation
-ifeq ($(CA_IMPLEMENTATION),smallstep)
-    COMPOSE_FILES += -f docker-compose.ca.smallstep.yml
-else ifeq ($(CA_IMPLEMENTATION),openxpki)
-    COMPOSE_FILES += -f docker-compose.ca.openxpki.yml
-else ifeq ($(CA_IMPLEMENTATION),vault)
-    COMPOSE_FILES += -f docker-compose.ca.vault.yml
-else
-    $(error Unsupported CA_IMPLEMENTATION: $(CA_IMPLEMENTATION))
-endif
+# Mandatory apps – always included
+COMPOSE_FILES = $(COMPOSE_BASE)
+COMPOSE_FILES += $(call include_app,dns,$(DNS_APP))
+COMPOSE_FILES += $(call include_app,ca,$(CA_APP))
+COMPOSE_FILES += $(call include_app,registry,$(REGISTRY_APP))
+COMPOSE_FILES += $(call include_app,policy,$(POLICY_APP))
+COMPOSE_FILES += $(call include_app,gateway,$(GATEWAY_APP))
+COMPOSE_FILES += $(call include_app,database,$(DB_APP))
+COMPOSE_FILES += $(call include_app,cache,$(CACHE_APP))
+COMPOSE_FILES += $(call include_app,storage,$(STORAGE_APP))
+COMPOSE_FILES += $(call include_app,messaging,$(MESSAGING_APP))
+COMPOSE_FILES += -f apps/dns-forwarder/dnsmasq/docker-compose.yml
+COMPOSE_FILES += -f apps/dashboard/heimdall/docker-compose.yml
+COMPOSE_FILES += -f apps/health/health-endpoint/docker-compose.yml
+COMPOSE_FILES += -f apps/fabric/default-router/docker-compose.yml
+COMPOSE_FILES += -f apps/fabric/squid/docker-compose.yml
+COMPOSE_FILES += -f apps/ntp/chrony/docker-compose.yml
+COMPOSE_FILES += -f apps/whois/whoisd/docker-compose.yml
+COMPOSE_FILES += -f apps/status/uptime-kuma/docker-compose.yml
 
-# Add registry (PowerDNS is default)
-ifeq ($(REGISTRY_IMPLEMENTATION),powerdns)
-    COMPOSE_FILES += -f docker-compose.registry.powerdns.yml
-else ifeq ($(REGISTRY_IMPLEMENTATION),knot)
-    COMPOSE_FILES += -f docker-compose.registry.knot.yml
-endif
-
-# Add authorities (policy, dashboard, health)
-COMPOSE_FILES += -f docker-compose.authorities.yml
-
-# Add essentials (gateway, data, messaging, dns forwarder)
-COMPOSE_FILES += -f docker-compose.essentials.yml
-
-# Add fabric
-COMPOSE_FILES += -f docker-compose.fabric.yml
-
-# Add email tier (based on EMAIL_TIER)
+# Email tier selection
 ifeq ($(EMAIL_TIER),1)
-    COMPOSE_FILES += --profile tier1 -f docker-compose.email.yml
-else ifeq ($(EMAIL_TIER),2)
-    COMPOSE_FILES += --profile tier2 -f docker-compose.email.yml
-else ifeq ($(EMAIL_TIER),3)
-    COMPOSE_FILES += --profile tier3 -f docker-compose.email.yml
-else ifeq ($(EMAIL_TIER),4)
-    COMPOSE_FILES += --profile tier4 -f docker-compose.email.yml
-endif
-
-# Add variants (lite/heavy) based on CACHE_IMPLEMENTATION etc.
-ifneq ($(CACHE_IMPLEMENTATION),redis)
-    ifeq ($(CACHE_IMPLEMENTATION),redis-stack)
-        COMPOSE_FILES += -f docker-compose.variants.yml --profile heavy-redis
+    COMPOSE_FILES += --profile tier1 -f apps/email/mailpit/docker-compose.yml
+else
+    COMPOSE_FILES += -f apps/email/stalwart/docker-compose.yml
+    COMPOSE_FILES += -f apps/webmail/snappymail/docker-compose.yml
+    ifeq ($(EMAIL_TIER),3)
+        COMPOSE_FILES += -f apps/email/dovecot/docker-compose.yml
+    endif
+    ifeq ($(EMAIL_TIER),4)
+        COMPOSE_FILES += -f apps/email/postfix-relay/docker-compose.yml
     endif
 endif
 
-# Add observability if enabled
+# Observability
 ifeq ($(ENABLE_OBSERVABILITY),true)
-    COMPOSE_FILES += -f docker-compose.observability.yml
+    COMPOSE_FILES += -f apps/observability/prometheus/docker-compose.yml
+    COMPOSE_FILES += -f apps/observability/grafana/docker-compose.yml
+    COMPOSE_FILES += -f apps/observability/loki/docker-compose.yml
+    COMPOSE_FILES += -f apps/observability/promtail/docker-compose.yml
+    COMPOSE_FILES += -f apps/observability/tempo/docker-compose.yml
 endif
 
-# Add sibling mirror if enabled
-ifeq ($(ENABLE_SIBLING),true)
-    COMPOSE_FILES += -f docker-compose.sibling.yml
-endif
-
-# Add extensions by tag (optional, passed as EXTENSION_TAGS environment variable)
+# Extensions – each tag adds its own compose file
 ifdef EXTENSION_TAGS
-    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += --profile tag-$(tag)))
-    COMPOSE_FILES += -f docker-compose.extensions.yml
+    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += --profile tag-$(tag) -f extensions/$(tag)/docker-compose.yml))
 endif
 
 # Targets
-.PHONY: up down restart status logs clean bootstrap switch-dns switch-ca switch-cache
+.PHONY: up down restart status logs clean bootstrap network-lab health switch-ca switch-cache
 
 up:
 	docker compose $(COMPOSE_FILES) up -d
@@ -101,20 +81,15 @@ clean: down
 bootstrap:
 	./scripts/bootstrap.sh
 
-switch-dns:
-	@echo "Switching DNS from $(DNS_IMPLEMENTATION) to $(NEW_DNS)"
-	sed -i 's/^DNS_IMPLEMENTATION=.*/DNS_IMPLEMENTATION=$(NEW_DNS)/' .env
-	make down
-	make up
+network-lab:
+	containerlab deploy -t core/containerlab/topology.clab.yml
+
+
+health:
+	./scripts/healthcheck.py
 
 switch-ca:
-	@echo "Switching CA from $(CA_IMPLEMENTATION) to $(NEW_CA)"
-	sed -i 's/^CA_IMPLEMENTATION=.*/CA_IMPLEMENTATION=$(NEW_CA)/' .env
-	make down
-	make up
+	./scripts/switch-ca.sh
 
 switch-cache:
-	@echo "Switching cache from $(CACHE_IMPLEMENTATION) to $(NEW_CACHE)"
-	sed -i 's/^CACHE_IMPLEMENTATION=.*/CACHE_IMPLEMENTATION=$(NEW_CACHE)/' .env
-	make down
-	make up
+	./scripts/switch-cache.sh

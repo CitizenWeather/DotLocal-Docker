@@ -1,0 +1,16 @@
+$ORIGIN net.local.
+$TTL 3600
+@               IN SOA  ns1.net.local. admin.net.local. ( 2025051901 7200 3600 1209600 3600 )
+                IN NS   ns1.net.local.
+ns1             IN A    169.254.0.2
+ca              IN A    169.254.0.4
+registrar       IN A    169.254.0.3
+dashboard       IN A    172.20.0.254
+health          IN A    172.20.0.254
+minio           IN A    172.20.0.254
+traefik         IN A    172.20.0.254
+smtp            IN A    172.20.0.254
+imap            IN A    172.20.0.254
+mail            IN A    172.20.0.254
+whois           IN A    172.20.0.254
+status          IN A    172.20.0.254

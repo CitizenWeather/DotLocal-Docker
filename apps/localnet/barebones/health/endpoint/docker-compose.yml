@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  health:
+    image: alpine:latest
+    container_name: netlocal_health
+    command: /bin/sh -c "apk add curl && mkdir -p /www && while true; do echo 'OK' > /www/health; sleep 10; done"
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.health.rule=Host(`health.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"

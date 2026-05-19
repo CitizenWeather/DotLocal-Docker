@@ -1,0 +1,18 @@
+name: netlocal-lab
+
+topology:
+  nodes:
+    router:
+      kind: frrouting
+      image: frrouting/frr:v8.4.0
+      binds:
+        - ./config/frr/daemons:/etc/frr/daemons
+    lora-gateway:
+      kind: linux
+      image: chirpstack/chirpstack-gateway-bridge:4
+    gnb:
+      kind: linux
+      image: srsran/srsran:latest
+  links:
+    - endpoints: ["router:eth1", "lora-gateway:eth1"]
+    - endpoints: ["router:eth2", "gnb:eth1"]

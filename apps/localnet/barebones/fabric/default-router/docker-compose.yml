@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  router:
+    image: alpine:latest
+    container_name: netlocal_router
+    command: /bin/sh -c "apk add iptables && echo 1 > /proc/sys/net/ipv4/ip_forward && iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - localnet_default

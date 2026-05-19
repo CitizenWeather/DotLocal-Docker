@@ -1,0 +1,17 @@
+[server]
+hostname = "mail.${NETLOCAL_ROOT_DOMAIN:-net.local}"
+
+[storage]
+data = "/opt/stalwart-mail/data"
+
+[smtp]
+listen = ["0.0.0.0:25"]
+submission = ["0.0.0.0:587"]
+disable-tls = true
+
+[imap]
+listen = ["0.0.0.0:143"]
+disable-tls = true
+
+[domains]
+"${NETLOCAL_ROOT_DOMAIN:-net.local}" = { type = "local", catchall = "admin@${NETLOCAL_ROOT_DOMAIN:-net.local}" }

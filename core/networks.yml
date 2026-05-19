@@ -1,0 +1,9 @@
+version: '3.8'
+
+networks:
+  localnet_backbone:
+    external: true
+    name: localnet_backbone
+  localnet_default:
+    external: true
+    name: localnet_default

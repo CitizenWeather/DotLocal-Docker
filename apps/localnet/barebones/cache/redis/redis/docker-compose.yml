@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: netlocal_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - cache_data:/data
+    networks:
+      - localnet_default
+
+volumes:
+  cache_data:

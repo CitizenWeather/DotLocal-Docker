@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  chrony:
+    image: cturra/ntp:latest
+    container_name: netlocal_chrony
+    environment:
+      - NTP_SERVERS=time.cloudflare.com,pool.ntp.org
+    networks:
+      - localnet_default
