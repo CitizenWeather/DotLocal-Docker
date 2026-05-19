@@ -1,0 +1,25 @@
+name: netlocal-ics
+
+topology:
+  nodes:
+    plc:
+      kind: linux
+      image: openplc/plc:latest
+      binds:
+        - ./config/plc/staircase.st:/plc/program.st
+    hmi:
+      kind: linux
+      image: scada/hmi:latest
+    modbus-master:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - modbus-cli --master --port 502
+    # Industrial switch
+    industrial-switch:
+      kind: bridge
+  links:
+    - endpoints: ["plc:eth1", "industrial-switch:eth1"]
+    - endpoints: ["hmi:eth1", "industrial-switch:eth2"]
+    - endpoints: ["modbus-master:eth1", "industrial-switch:eth3"]
+    - endpoints: ["industrial-switch:eth4", "localnet_default:eth0"]

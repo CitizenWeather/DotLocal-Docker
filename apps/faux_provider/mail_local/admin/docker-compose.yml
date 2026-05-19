@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  mail-admin-api:
+    build: .
+    container_name: netlocal_mail_admin
+    environment:
+      - STALWART_HOST=stalwart
+      - STALWART_API_PORT=8080
+      - STALWART_SECRET=${STALWART_SECRET}
+      - PORT=3001
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mail-admin.rule=Host(`mail-admin.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.mail-admin.loadbalancer.server.port=3001"

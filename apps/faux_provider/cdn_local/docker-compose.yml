@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  varnish:
+    build: ./varnish
+    container_name: netlocal_cdn_varnish
+    environment:
+      - BACKEND_HOST=${CDN_BACKEND_HOST:-traefik}
+      - BACKEND_PORT=${CDN_BACKEND_PORT:-80}
+      - GEOIP_ENABLED=${CDN_GEOIP_ENABLED:-false}
+      - VARNISH_SIZE=${VARNISH_SIZE:-256M}
+    volumes:
+      - ./data/varnish:/var/lib/varnish
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cdn.rule=Host(`cdn.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.cdn.loadbalancer.server.port=80"
+      - "netlocal.component=cdn"
+
+  cdn-api:
+    build: ./api
+    container_name: netlocal_cdn_api
+    environment:
+      - VARNISH_ADDR=varnish
+      - VARNISH_ADMIN_PORT=6082
+      - API_PORT=3002
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cdn-api.rule=Host(`cdn-api.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.cdn-api.loadbalancer.server.port=3002"
+    depends_on:
+      - varnish
+
+  cdn-frontend:
+    image: nginx:alpine
+    container_name: netlocal_cdn_frontend
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cdn-frontend.rule=Host(`cdn-manager.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.cdn-frontend.loadbalancer.server.port=80"

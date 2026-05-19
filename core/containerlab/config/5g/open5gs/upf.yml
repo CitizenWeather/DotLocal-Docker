@@ -1,0 +1,13 @@
+logger:
+  file: /var/log/open5gs/upf.log
+
+upf:
+  pfcp:
+    server:
+      - address: 0.0.0.0
+  gtpu:
+    server:
+      - address: 0.0.0.0
+  session:
+    - dnn: internet
+      cidr: 10.45.0.0/16

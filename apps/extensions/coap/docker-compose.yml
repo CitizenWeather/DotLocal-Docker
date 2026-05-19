@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  coap-server:
+    build: ./server
+    profiles: ["tag-coap"]
+    container_name: netlocal_coap_server
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=false"  # CoAP is UDP, not HTTP
+      - "netlocal.tag=coap"
+
+  coap-client:
+    build: ./client
+    profiles: ["tag-coap"]
+    container_name: netlocal_coap_client
+    networks:
+      - localnet_default
+    depends_on:
+      - coap-server
+    labels:
+      - "netlocal.tag=coap"

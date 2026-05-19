@@ -1,0 +1,28 @@
+version: '3.8'
+
+# Include Fediverse
+services:
+  pleroma-db:
+    extends:
+      file: extensions/fediverse/docker-compose.yml
+      service: pleroma-db
+  pleroma:
+    extends:
+      file: extensions/fediverse/docker-compose.yml
+      service: pleroma
+
+# Include CoAP
+  coap-server:
+    extends:
+      file: extensions/coap/docker-compose.yml
+      service: coap-server
+  coap-client:
+    extends:
+      file: extensions/coap/docker-compose.yml
+      service: coap-client
+
+# Include IoT (Mosquitto)
+  mosquitto:
+    extends:
+      file: extensions/iot/docker-compose.yml
+      service: mosquitto

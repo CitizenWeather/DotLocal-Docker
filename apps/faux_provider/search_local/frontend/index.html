@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalNet Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; text-align: center; }
+        input { width: 70%; padding: 0.5rem; }
+        button { padding: 0.5rem 1rem; }
+        .result { text-align: left; margin-top: 1rem; border-bottom: 1px solid #ccc; padding: 0.5rem; }
+        .title { font-size: 1.2rem; font-weight: bold; }
+        .url { color: green; font-size: 0.9rem; }
+        .snippet { margin-top: 0.3rem; }
+    </style>
+</head>
+<body>
+    <h1>Search .{{ NETLOCAL_ROOT_DOMAIN }}</h1>
+    <input type="text" id="query" placeholder="Enter search term...">
+    <button onclick="search()">Search</button>
+    <div id="results"></div>
+
+    <script>
+        const MEILISEARCH_HOST = 'http://search-api.net.local:7700';
+        const INDEX_NAME = 'netlocal_pages';
+
+        async function search() {
+            const query = document.getElementById('query').value;
+            if (!query) return;
+            const url = `${MEILISEARCH_HOST}/indexes/${INDEX_NAME}/search?q=${encodeURIComponent(query)}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = data.hits.map(hit => `
+                <div class="result">
+                    <div class="title"><a href="${hit.url}">${hit.title}</a></div>
+                    <div class="url">${hit.url}</div>
+                    <div class="snippet">${hit.snippet}...</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

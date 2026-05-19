@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  registrar-api:
+    build: .
+    container_name: netlocal_registrar_api
+    environment:
+      - POWERDNS_API_KEY=${POWERDNS_API_KEY}
+      - POWERDNS_HOST=powerdns
+      - PORT=3000
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.registrar-api.rule=Host(`api.registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.registrar-api.loadbalancer.server.port=3000"

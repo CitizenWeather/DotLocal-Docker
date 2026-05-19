@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  pleroma-db:
+    image: postgres:13-alpine
+    profiles: ["tag-fediverse"]
+    container_name: netlocal_pleroma_db
+    environment:
+      - POSTGRES_USER=pleroma
+      - POSTGRES_PASSWORD=${PLEROMA_DB_PASSWORD}
+      - POSTGRES_DB=pleroma
+    volumes:
+      - pleroma_db_data:/var/lib/postgresql/data
+    networks:
+      - localnet_default
+    restart: unless-stopped
+
+  pleroma:
+    image: pleroma/pleroma:stable
+    profiles: ["tag-fediverse"]
+    container_name: netlocal_pleroma
+    depends_on:
+      - pleroma-db
+    volumes:
+      - ./pleroma/config.exs:/etc/pleroma/config.exs:ro
+      - pleroma_uploads:/var/lib/pleroma/uploads
+      - pleroma_static:/var/lib/pleroma/static
+    environment:
+      - DOMAIN=fediverse.${NETLOCAL_ROOT_DOMAIN:-net.local}
+      - INSTANCE_NAME=NetLocal Social
+      - ADMIN_EMAIL=admin@${NETLOCAL_ROOT_DOMAIN:-net.local}
+      - POSTGRES_DB=pleroma
+      - POSTGRES_USER=pleroma
+      - POSTGRES_PASSWORD=${PLEROMA_DB_PASSWORD}
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pleroma.rule=Host(`social.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.pleroma.loadbalancer.server.port=4000"
+
+volumes:
+  pleroma_db_data:
+  pleroma_uploads:
+  pleroma_static:

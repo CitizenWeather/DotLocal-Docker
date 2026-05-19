@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  pdns-slave:
+    image: powerdns/pdns-auth-mysql:4.8.0
+    container_name: netlocal_pdns_slave
+    environment:
+      - PDNS_gmysql_host=postgres
+      - PDNS_gmysql_user=powerdns
+      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
+      - PDNS_gmysql_dbname=powerdns_slave
+      - PDNS_master=yes
+      - PDNS_slave=yes
+      - PDNS_api=yes
+      - PDNS_api_key=${POWERDNS_API_KEY}
+    depends_on:
+      - postgres
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pdns-slave.rule=Host(`ns2.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.pdns-slave.loadbalancer.server.port=8081"

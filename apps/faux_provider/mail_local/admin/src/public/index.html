@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mail Provider Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Mail Provider Admin</h1>
+    <div id="domains">
+        <h2>Domains</h2>
+        <ul id="domain-list"></ul>
+        <input type="text" id="new-domain" placeholder="example.net.local">
+        <button onclick="createDomain()">Add Domain</button>
+    </div>
+    <hr>
+    <div id="accounts">
+        <h2>Accounts</h2>
+        <select id="domain-select"></select>
+        <input type="text" id="username" placeholder="username">
+        <input type="password" id="password" placeholder="password">
+        <button onclick="createAccount()">Add Account</button>
+    </div>
+    <hr>
+    <div id="aliases">
+        <h2>Aliases</h2>
+        <select id="alias-domain-select"></select>
+        <input type="text" id="source" placeholder="source (local-part)">
+        <input type="text" id="destination" placeholder="destination (local-part)">
+        <button onclick="createAlias()">Add Alias</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

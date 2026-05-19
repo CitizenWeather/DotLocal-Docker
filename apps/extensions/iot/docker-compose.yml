@@ -8,12 +8,14 @@ services:
     volumes:
       - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
     networks:
       - localnet_default
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mosquitto.rule=Host(`mqtt.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
-
+      - "traefik.http.services.mosquitto.loadbalancer.server.port=1883"
+      - "netlocal.tag=iot"
   chirpstack:
     image: chirpstack/chirpstack:4
     profiles: ["tag-iot"]

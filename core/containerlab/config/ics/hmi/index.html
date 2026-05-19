@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>PLC Dashboard</title></head>
+<body>
+    <h1>Industrial Control HMI</h1>
+    <div id="status">Connecting...</div>
+    <script>
+        setInterval(async () => {
+            const res = await fetch('/api/plc/status');
+            const data = await res.json();
+            document.getElementById('status').innerHTML = `
+                <p>Floor1 Light: ${data.floor1_light ? 'ON' : 'OFF'}</p>
+                <p>Floor2 Light: ${data.floor2_light ? 'ON' : 'OFF'}</p>
+            `;
+        }, 1000);
+    </script>
+</body>
+</html>

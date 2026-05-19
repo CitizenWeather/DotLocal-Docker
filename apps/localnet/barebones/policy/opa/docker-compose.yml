@@ -4,11 +4,31 @@ services:
   opa:
     image: openpolicyagent/opa:latest
     container_name: netlocal_opa
-    command: run --server --addr=0.0.0.0:8181
+    command: run --server --addr=0.0.0.0:8181 --log-level=debug
     volumes:
       - ./config/policy.rego:/policy/policy.rego:ro
     networks:
       - localnet_default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/v1/health"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opa.rule=Host(`policy.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.opa.loadbalancer.server.port=8181"
+      - "netlocal.component=policy"
+
+  envoy:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: netlocal_envoy
+    volumes:
+      - ./config/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    cap_add:
+      - NET_ADMIN
+    network_mode: host   # To intercept all traffic (requires host network)
+    # Alternatively, use a sidecar pattern; host mode is simpler for egress policy.
+    restart: unless-stopped
+    depends_on:
+      - opa
     labels:
       - "netlocal.component=policy"
-      - "netlocal.layer=authorities"

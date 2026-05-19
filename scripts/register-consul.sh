@@ -1,10 +1,9 @@
 #!/bin/bash
-# Usage: ./scripts/register-service.sh <service-name> <port> [health-check-url]
+# Usage: ./scripts/register-consul.sh <service-name> <port> [health-check-url]
 SERVICE=$1
 PORT=$2
 HEALTH=$3
 
-# Register with Consul
 curl -X PUT "http://consul.net.local:8500/v1/agent/service/register" \
   -H "Content-Type: application/json" \
   -d "{
@@ -12,10 +11,6 @@ curl -X PUT "http://consul.net.local:8500/v1/agent/service/register" \
     \"Port\": $PORT,
     \"Check\": {
       \"HTTP\": \"$HEALTH\",
-      \"Interval\": \"10s\",
-      \"Timeout\": \"2s\"
+      \"Interval\": \"10s\"
     }
   }"
-
-# Also optionally register with PowerDNS (existing register-service.sh logic)
-# ...

@@ -1,0 +1,12 @@
+[general]
+log_level = 4
+
+[postgresql]
+dsn = "postgres://chirpstack:${CHIRPSTACK_DB_PASSWORD}@postgres:5432/chirpstack?sslmode=disable"
+
+[redis]
+url = "redis://redis:6379"
+
+[network_server]
+net_id = "010203"
+band = "EU868"

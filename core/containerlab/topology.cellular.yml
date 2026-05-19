@@ -1,0 +1,36 @@
+name: netlocal-5g
+
+topology:
+  nodes:
+    # 5G Core (Open5GS)
+    amf:
+      kind: linux
+      image: open5gs/amf:latest
+    smf:
+      kind: linux
+      image: open5gs/smf:latest
+    upf:
+      kind: linux
+      image: open5gs/upf:latest
+    # Radio Access Network
+    gnb1:
+      kind: linux
+      image: srsran/srsgnb:latest
+      binds:
+        - ./config/gnb1.conf:/etc/srsran/gnb.conf
+    gnb2:
+      kind: linux
+      image: srsran/srsgnb:latest
+    # User Equipment
+    ue1:
+      kind: linux
+      image: srsran/srsue:latest
+    ue2:
+      kind: linux
+      image: srsran/srsue:latest
+  links:
+    - endpoints: ["amf:eth1", "gnb1:eth1"]
+    - endpoints: ["amf:eth1", "gnb2:eth1"]
+    - endpoints: ["gnb1:eth2", "ue1:eth1"]
+    - endpoints: ["gnb2:eth2", "ue2:eth1"]
+    - endpoints: ["upf:eth1", "localnet_default:eth0"]  # connect to NetLocal's main network

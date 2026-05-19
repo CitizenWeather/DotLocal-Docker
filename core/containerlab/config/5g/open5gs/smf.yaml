@@ -1,0 +1,16 @@
+logger:
+  file: /var/log/open5gs/smf.log
+
+smf:
+  sbi:
+    server:
+      - address: 0.0.0.0
+    clients:
+      - address: amf
+      - address: upf
+  pfcp:
+    server:
+      - address: 0.0.0.0
+  dnn: internet
+  dns: 8.8.8.8
+  mtu: 1400

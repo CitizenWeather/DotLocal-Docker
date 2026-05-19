@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  dns-hosting-api:
+    build: ./api
+    container_name: netlocal_dns_hosting_api
+    environment:
+      - POWERDNS_API_KEY=${POWERDNS_API_KEY}
+      - POWERDNS_HOST=powerdns
+      - POWERDNS_PORT=8081
+      - API_PORT=3003
+      - ROOT_DOMAIN=${NETLOCAL_ROOT_DOMAIN:-net.local}
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dns-hosting-api.rule=Host(`dns-api.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.dns-hosting-api.loadbalancer.server.port=3003"
+      - "netlocal.component=dns-hosting"
+
+  dns-hosting-frontend:
+    image: nginx:alpine
+    container_name: netlocal_dns_hosting_frontend
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dns-hosting-frontend.rule=Host(`dns.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.dns-hosting-frontend.loadbalancer.server.port=80"

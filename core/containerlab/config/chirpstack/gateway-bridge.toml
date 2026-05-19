@@ -1,0 +1,11 @@
+[general]
+log_level = 4
+
+[integration]
+marshaler = "protobuf"
+backend = "mqtt"
+event_topic_template = "gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+command_topic_template = "gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
+
+[integration.mqtt]
+server = "tcp://mosquitto:1883"

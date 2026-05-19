@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DNS Hosting Provider</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>DNS Hosting Manager</h1>
+    <div id="zones">
+        <h2>Zones</h2>
+        <ul id="zone-list"></ul>
+        <input type="text" id="new-zone" placeholder="subdomain (e.g., myapp)">
+        <button onclick="createZone()">Add Zone</button>
+    </div>
+    <hr>
+    <div id="records">
+        <h2>Records</h2>
+        <select id="zone-select"></select>
+        <button onclick="loadRecords()">Load Records</button>
+        <table id="records-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Content</th><th>TTL</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <div>
+            <h3>Add Record</h3>
+            <input type="text" id="record-name" placeholder="subdomain (or @)">
+            <select id="record-type">
+                <option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option>
+            </select>
+            <input type="text" id="record-content" placeholder="Content (e.g., IP address)">
+            <input type="number" id="record-ttl" placeholder="TTL" value="3600">
+            <button onclick="addRecord()">Add Record</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

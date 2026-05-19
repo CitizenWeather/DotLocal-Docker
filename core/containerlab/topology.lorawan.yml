@@ -1,0 +1,34 @@
+name: netlocal-lorawan
+
+topology:
+  nodes:
+    # ChirpStack Network Server (as a regular container, but we can also run it in Containerlab)
+    nw-server:
+      kind: linux
+      image: chirpstack/chirpstack:4
+      binds:
+        - ./config/chirpstack:/etc/chirpstack
+    # Gateway 1 (city centre)
+    gw1:
+      kind: linux
+      image: chirpstack/chirpstack-gateway-bridge:4
+      binds:
+        - ./config/gateway1:/etc/chirpstack-gateway-bridge
+    # Gateway 2 (suburbs)
+    gw2:
+      kind: linux
+      image: chirpstack/chirpstack-gateway-bridge:4
+    # Simulated end device (sensor)
+    sensor:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - python3 /simulator/lorawan-sensor.py
+    # Virtual switch connecting gateways to network server
+    switch:
+      kind: bridge
+  links:
+    - endpoints: ["gw1:eth1", "switch:eth1"]
+    - endpoints: ["gw2:eth1", "switch:eth2"]
+    - endpoints: ["nw-server:eth1", "switch:eth3"]
+    - endpoints: ["sensor:eth1", "switch:eth4"]  # sensor sends via nearest gateway (simulated)

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  consul:
+    image: hashicorp/consul:1.17
+    container_name: netlocal_consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=0.0.0.0 -config-dir=/consul/config
+    environment:
+      - CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}
+    volumes:
+      - consul_data:/consul/data
+      - ./config/consul.hcl:/consul/config/consul.hcl:ro
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.consul.rule=Host(`consul.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.consul.loadbalancer.server.port=8500"
+      - "netlocal.component=discovery"
+
+volumes:
+  consul_data:

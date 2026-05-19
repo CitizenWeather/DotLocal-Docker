@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: netlocal_meilisearch
+    environment:
+      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:-masterKey123}
+      - MEILI_ENV=development
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.meilisearch.rule=Host(`search-api.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.meilisearch.loadbalancer.server.port=7700"
+
+  crawler:
+    build: ./crawler
+    container_name: netlocal_search_crawler
+    environment:
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - MEILISEARCH_KEY=${MEILISEARCH_KEY:-masterKey123}
+      - CRAWL_DOMAIN=${NETLOCAL_ROOT_DOMAIN:-net.local}
+    networks:
+      - localnet_default
+    depends_on:
+      - meilisearch
+    restart: on-failure
+
+  search-frontend:
+    image: nginx:alpine
+    container_name: netlocal_search_frontend
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.search-frontend.rule=Host(`search.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.search-frontend.loadbalancer.server.port=80"
+
+volumes:
+  meili_data:
