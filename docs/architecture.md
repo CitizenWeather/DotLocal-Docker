@@ -43,7 +43,7 @@ NetLocal uses two isolated Docker bridge networks and a Makefile that assembles 
 ```
 Host machine resolver
   └─ dnsmasq forwarder (always on, port 53 on Docker host)
-       ├─ *.net.local  →  CoreDNS (169.254.0.2)
+       ├─ *.<NETLOCAL_ROOT_DOMAIN>  →  CoreDNS (169.254.0.2)
        │     ├─ Static zone records  (ca, registrar, ns1)
        │     └─ All other .local queries  →  PowerDNS (169.254.0.3)
        │              └─ Dynamic records stored in PostgreSQL
@@ -58,13 +58,13 @@ New services are added to the DNS registry via the PowerDNS HTTP API. The helper
 
 ```
 Gateway (Caddy or Traefik)
-  └─ Requests certificate for *.net.local via ACME
-       └─ Step-CA ACME endpoint: https://ca.net.local/acme/acme/directory
+  └─ Requests certificate for *.localnet via ACME
+       └─ Step-CA ACME endpoint: https://ca.localnet/acme/acme/directory
               └─ Issues cert signed by the NetLocal Root CA
                      └─ Root CA cert must be trusted on client machines
 ```
 
-Caddy and Traefik both support automatic ACME certificate issuance. Caddy's `Caddyfile` sets `local_ca` to the Step-CA ACME URL; Traefik uses a `certificatesResolvers` block in its static config. After first boot, all `*.net.local` subdomains served through the gateway get valid TLS automatically.
+Caddy and Traefik both support automatic ACME certificate issuance. Caddy's `Caddyfile` sets `local_ca` to the Step-CA ACME URL; Traefik uses a `certificatesResolvers` block in its static config. After first boot, all `*.localnet` subdomains served through the gateway get valid TLS automatically.
 
 ---
 
@@ -111,7 +111,7 @@ Gateway routing labels follow Traefik's convention (used even with Caddy for con
 ```yaml
 labels:
   - traefik.enable=true
-  - traefik.http.routers.minio.rule=Host(`minio.net.local`)
+  - traefik.http.routers.minio.rule=Host(`minio.localnet`)
   - traefik.http.services.minio.loadbalancer.server.port=9000
 ```
 

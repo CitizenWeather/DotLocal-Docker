@@ -30,7 +30,7 @@ Switch with: `./scripts/lib/switch-dns.sh <impl>`
 
 | Implementation | Image | Notes |
 |---|---|---|
-| `smallstep` *(recommended)* | `smallstep/step-ca:0.27.0` | ACME support, fast startup, zero config; ACME endpoint: `https://ca.net.local/acme/acme/directory` |
+| `smallstep` *(recommended)* | `smallstep/step-ca:0.27.0` | ACME support, fast startup, zero config; ACME endpoint: `https://ca.localnet/acme/acme/directory` |
 | `openxpki` | `openxpki/openxpki:latest` | Enterprise CA with web UI and workflows |
 | `vault-pki` | `hashicorp/vault:latest` | HashiCorp Vault PKI secrets engine; requires Vault initialisation |
 
@@ -54,7 +54,7 @@ Switch with: `./scripts/lib/switch-ca.sh <impl>`
 
 **Variable:** `GATEWAY_APP`  
 **Network:** `localnet_default`  
-**Role:** Reverse proxy that terminates TLS and routes `*.net.local` requests to upstream services.
+**Role:** Reverse proxy that terminates TLS and routes `*.<NETLOCAL_ROOT_DOMAIN>` requests to upstream services.
 
 | Implementation | Image | Ports | Notes |
 |---|---|---|---|
@@ -99,7 +99,7 @@ Switch with: `./scripts/lib/switch-cache.sh <impl>`
 
 | Implementation | Image | Ports | Notes |
 |---|---|---|---|
-| `minio` *(recommended)* | `minio/minio:latest` | 9000 (API), 9001 (console) | Full S3 API; web console at `minio.net.local:9001`; credentials from `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
+| `minio` *(recommended)* | `minio/minio:latest` | 9000 (API), 9001 (console) | Full S3 API; web console at `minio.localnet:9001`; credentials from `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
 | `seaweedfs` | `chrislusf/seaweedfs:latest` | 9000 | Distributed; lighter weight; S3-compatible mode with `-s3` flag |
 
 ---

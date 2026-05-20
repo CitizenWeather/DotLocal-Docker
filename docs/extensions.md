@@ -41,8 +41,8 @@ Adds an MQTT broker and a LoRaWAN network server.
 
 | Service | Image | Role | URL / Port |
 |---|---|---|---|
-| Mosquitto | `eclipse-mosquitto:2.0` | MQTT broker | `mqtt.net.local:1883` |
-| ChirpStack | `chirpstack/chirpstack:4` | LoRaWAN network server | `lora.net.local` |
+| Mosquitto | `eclipse-mosquitto:2.0` | MQTT broker | `mqtt.localnet:1883` |
+| ChirpStack | `chirpstack/chirpstack:4` | LoRaWAN network server | `lora.localnet` |
 
 **Dependencies:** ChirpStack requires PostgreSQL. Ensure `DB_APP=postgres` is set.
 
