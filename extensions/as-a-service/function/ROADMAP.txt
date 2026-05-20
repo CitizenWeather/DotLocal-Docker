@@ -1,0 +1,5 @@
+# TODO: Function as a Service Runtime (OpenFaaS / Knative)
+
+Element: Run and scale code in response to HTTP requests or events, without managing servers.
+DotLocal fit: FAAS_APP extension. OpenFaaS brings its own UI and CLI; functions auto‑register in DNS.
+Value: A perfect sandbox for learning serverless patterns, cold‑start tuning, and function chaining.

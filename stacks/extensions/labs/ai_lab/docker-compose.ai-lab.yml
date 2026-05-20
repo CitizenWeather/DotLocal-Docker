@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["tag-ml"]
+    container_name: netlocal_ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ollama.rule=Host(`llm.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    profiles: ["tag-ml"]
+    container_name: netlocal_openwebui
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - openwebui_data:/app/backend/data
+    networks:
+      - localnet_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openwebui.rule=Host(`ai.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+volumes:
+  ollama_data:
+  openwebui_data:

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Usage: ./scripts/switch-cache.sh <redis|redis-stack>
+
+set -e
+
+NEW_CACHE=$1
+if [ -z "$NEW_CACHE" ]; then
+    echo "Usage: switch-cache.sh <redis|redis-stack>"
+    exit 1
+fi
+
+# Update .env
+sed -i.bak "s/^CACHE_APP=.*/CACHE_APP=$NEW_CACHE/" .env
+
+# Stop and restart cache (will recreate volume)
+make down
+make up
+
+echo "Switched cache to $NEW_CACHE. Test with redis-cli -h redis.net.local ping"

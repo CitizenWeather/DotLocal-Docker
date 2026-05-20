@@ -1,0 +1,7 @@
+.env
+volumes/
+**/config/generated/
+acme.json
+*.log
+.DS_Store
+/deployed/

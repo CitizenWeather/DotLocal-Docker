@@ -1,0 +1,4 @@
+# TODO: Virtual Desktop & Browser Isolation (Kasm Workspaces)
+Element: Streaming containerised desktops, browsers, and apps via a web browser.
+DotLocal fit: VDI_APP extension. Kasm can spin up isolated Firefox/Chrome sessions, Ubuntu desktops, or even Windows apps, all accessed via vdi.localhost.
+Value: Test web apps in different browsers without installing them; provide a secure, air‑gapped browsing experience for untrusted sites.
