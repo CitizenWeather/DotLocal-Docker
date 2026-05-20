@@ -1,29 +1,7 @@
-version: '3.8'
+# Developer lab bundle — use this to start all dev lab services together.
+# Individual services can also be started standalone from solutions/<name>/docker-compose.yml
 
-services:
-  n8n:
-    image: n8nio/n8n:latest
-    profiles: ["tag-dev"]
-    container_name: netlocal_n8n
-    environment:
-      - N8N_HOST=n8n.${NETLOCAL_ROOT_DOMAIN:-net.local}
-    volumes:
-      - n8n_data:/home/node/.n8n
-    networks:
-      - localnet_default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.n8n.rule=Host(`n8n.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
-
-  plantuml:
-    image: plantuml/plantuml-server:jetty
-    profiles: ["tag-dev"]
-    container_name: netlocal_plantuml
-    networks:
-      - localnet_default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.plantuml.rule=Host(`plantuml.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
-
-volumes:
-  n8n_data:
+include:
+  - path: solutions/n8n/docker-compose.yml
+  - path: solutions/plantuml/docker-compose.yml
+  - path: solutions/mkdocs/docker-compose.yml

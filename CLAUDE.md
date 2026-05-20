@@ -69,7 +69,7 @@ GATEWAY_APP=caddy     → stacks/barebones/net_root/intranet_service_provider/ba
 REGISTRY_APP=powerdns → stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/powerdns/docker-compose.yml
 POLICY_APP=opa        → stacks/barebones/net_root/localnet_authority/policy/opa/docker-compose.yml
 CACHE_APP=redis       → stacks/net_providers/cache_provider/redis/docker-compose.yml
-MESSAGING_APP=nats    → build/layers/barebones/infrastructure/messages/nats/docker-compose.yml
+MESSAGING_APP=nats    → build/layers/barebones/infrastructure/messages/slots/nats/docker-compose.yml
 ...
 ```
 
@@ -85,11 +85,11 @@ Files are included via `include_if` which silently skips missing implementations
 
 ### Observability stack
 
-When `ENABLE_OBSERVABILITY=true`, services are added from `build/layers/architecture/.supervisor/maintenance/observability/`. Configuration for Loki, Promtail, and Tempo lives alongside their compose files in `slots/<service>/config/`.
+When `ENABLE_OBSERVABILITY=true`, services are added from `build/layers/architecture/supervisor/observability/`. Configuration for Loki, Promtail, and Tempo lives alongside their compose files in `slots/<service>/config/`.
 
 ### Extensions
 
-Optional extension packs live in the top-level `extensions/` directory. The Makefile expects `extensions/<tag>/docker-compose.yml` for each active tag in `EXTENSION_TAGS`. Standalone extension stacks (labs, technologies, native modules) live in `stacks/extensions/`.
+Optional extension packs live in the top-level `extensions/` directory. The Makefile expects `extensions/tags/<tag>/docker-compose.yml` for each active tag in `EXTENSION_TAGS`. Standalone extension stacks (labs, technologies, native modules, cloud emulators) live directly under `extensions/` subdirectories and are not auto-included — use them as standalone compose stacks.
 
 Cloud/service emulators (LocalStack, Supabase, etc.) are in `extensions/as-a-service/` and are not auto-included — use them as standalone compose stacks.
 
@@ -113,19 +113,31 @@ Every compose service carries a `netlocal.component=<role>` Docker label (e.g. `
 stacks/
   core/             External networks declaration, containerlab topology
   barebones/        Core infrastructure compose files (gateway, registry, policy, health, dashboards)
-  net_providers/    Provider-role services (mail, cache, DNS registrar, hosting)
+  net_providers/    Provider-role services (mail, cache, database, storage)
   net_web/          Web-tier services (whois, full/light web profiles)
-  extensions/       Standalone extension stacks (labs, technologies, native modules, hardware)
 build/
   layers/           Architectural layer compose files and configs
-    authority/      CA, NTP, identity services
-    barebones/      Infrastructure primitives (messaging: NATS, Kafka, etc.)
-    architecture/   Supervisor plane (observability, tenancy, secrets, backups)
+    authority/      CA, NTP, identity services (backbone-attached)
+    barebones/      Infrastructure primitives
+      infrastructure/messages/slots/  Messaging broker slot (NATS, Kafka, RabbitMQ, Redpanda)
+    architecture/   Planned extended service layers
+      supervisor/   Management plane (observability, maintenance, secrets)
+        observability/  Grafana, Prometheus, Loki, Promtail, Tempo
+  apps/             Build metadata (VERSION, extensions registry)
   profiles/         Build profiles (out-of-the-box configurations)
-extensions/         Tag-activated extension packs (referenced by EXTENSION_TAGS in .env)
+extensions/
+  tags/             Tag-activated extension packs (referenced by EXTENSION_TAGS in .env)
+    iot/            IoT / ChirpStack stack
+    chaos/          Chaos engineering (Toxiproxy, Pumba)
+    legacy/         Legacy protocol support (FTP, Telnet)
+    labs/           Developer lab bundle (n8n, PlantUML, MkDocs)
   as-a-service/     Cloud/service emulators (Supabase, LocalStack, etc.) — standalone stacks
-  labs/             Lab environments (developer, data, security)
-  technologies/     Specialist technology stacks (LoRaWAN, mesh, cellular, etc.)
+  labs/             Lab environments (developer, data, security, home)
+    developer/solutions/  Individual standalone compose files per dev tool
+  technologies/     Specialist technology stacks (LoRaWAN, mesh, cellular, overlay-networks)
+  synthetic/        Artificial/simulated services (traffic generators, mocks)
+  firmware/         Firmware and hardware device extensions
+  modules/          Specialist engines (chaos, topology, mimicking)
 config/             Runtime configuration overrides and generated output
   generated/        Git-ignored; written at runtime by services
 scripts/
@@ -148,9 +160,9 @@ If the slot has no `*_DIR` entry yet, add one in the Makefile's "Swappable slot 
 
 ### Adding a new extension (tag-activated)
 
-1. Create `extensions/<tag>/docker-compose.yml`
+1. Create `extensions/tags/<tag>/docker-compose.yml`
 2. Add the tag to `EXTENSION_TAGS` in `.env`
-3. The Makefile automatically includes `-f extensions/<tag>/docker-compose.yml` for each active tag
+3. The Makefile automatically includes `-f extensions/tags/<tag>/docker-compose.yml` for each active tag
 
 ---
 

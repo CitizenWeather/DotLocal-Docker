@@ -1,0 +1,17 @@
+services:
+  mkdocs:
+    image: squidfunk/mkdocs-material:latest
+    container_name: netlocal_mkdocs
+    command: serve --dev-addr=0.0.0.0:8000
+    volumes:
+      - ./docs:/docs:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=lab"
+      - "traefik.enable=true"
+      - "traefik.http.routers.mkdocs.rule=Host(`docs.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+networks:
+  localnet_default:
+    external: true

@@ -1,0 +1,19 @@
+# Chaos engineering extension tag
+# Activates when EXTENSION_TAGS includes 'chaos'
+# Includes: Pumba for Docker chaos, Toxiproxy for network fault injection
+
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    container_name: netlocal_toxiproxy
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=chaos"
+      - "traefik.enable=true"
+      - "traefik.http.routers.toxiproxy.rule=Host(`chaos.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.toxiproxy.loadbalancer.server.port=8474"
+
+networks:
+  localnet_default:
+    external: true

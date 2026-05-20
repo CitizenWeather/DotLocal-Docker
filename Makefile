@@ -1,7 +1,20 @@
 include .env
 export
 
-# External networks declaration
+# ---------------------------------------------------------------------------
+# Two-tree convention
+#
+# stacks/   — runtime slot implementations: one docker-compose.yml per
+#             concrete implementation of a swappable role (gateway, CA, etc.)
+#             and the fixed services that always run. The Makefile selects
+#             which file to load based on *_APP env variables.
+#
+# build/layers/ — shipped architectural layer definitions: messaging, NTP,
+#             observability, and other always-present infrastructure that
+#             ships with the repo and is not typically user-extended.
+# ---------------------------------------------------------------------------
+
+# External networks declaration (declared external; created by make bootstrap)
 COMPOSE_BASE = -f stacks/core/networks.yml
 
 # Helper to include a compose file only if it exists
@@ -17,9 +30,8 @@ GATEWAY_DIR   = stacks/barebones/net_root/intranet_service_provider/base/gateway
 REGISTRY_DIR  = stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core
 POLICY_DIR    = stacks/barebones/net_root/localnet_authority/policy
 CACHE_DIR     = stacks/net_providers/cache_provider
-MESSAGING_DIR = build/layers/barebones/infrastructure/messages
+MESSAGING_DIR = build/layers/barebones/infrastructure/messages/slots
 
-# Slots not yet populated (compose files will be found once created under these dirs)
 DNS_DIR      = stacks/barebones/net_root/intranet_service_provider/base/dns
 CA_DIR       = stacks/barebones/net_root/intranet_service_provider/base/cert_authority
 DB_DIR       = stacks/net_providers/database
@@ -65,13 +77,13 @@ endif
 
 # Observability
 ifeq ($(ENABLE_OBSERVABILITY),true)
-    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
-    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/docker-compose.yml)
 endif
 
-# Extensions – each tag adds its own compose file under extensions/<tag>/
+# Extensions – each tag adds its own compose file under extensions/tags/<tag>/
 ifdef EXTENSION_TAGS
-    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += $(call include_if,extensions/$(tag)/docker-compose.yml)))
+    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += $(call include_if,extensions/tags/$(tag)/docker-compose.yml)))
 endif
 
 # ---------------------------------------------------------------------------

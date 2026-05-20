@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: netlocal_postgres
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=netlocal
+      - POSTGRES_DB=netlocal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=database"
+
+volumes:
+  postgres_data:
+
+networks:
+  localnet_default:
+    external: true

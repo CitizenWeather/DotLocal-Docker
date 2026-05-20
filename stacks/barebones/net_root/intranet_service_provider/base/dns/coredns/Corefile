@@ -1,0 +1,6 @@
+. {
+    forward . 169.254.0.3
+    cache 30
+    log
+    errors
+}

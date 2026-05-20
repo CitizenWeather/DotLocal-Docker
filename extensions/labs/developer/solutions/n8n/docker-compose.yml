@@ -1,0 +1,21 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: netlocal_n8n
+    environment:
+      - N8N_HOST=n8n.${NETLOCAL_ROOT_DOMAIN:-net.local}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=lab"
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+volumes:
+  n8n_data:
+
+networks:
+  localnet_default:
+    external: true

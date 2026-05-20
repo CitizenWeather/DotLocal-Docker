@@ -1,0 +1,18 @@
+services:
+  dovecot:
+    image: dovecot/dovecot:latest
+    container_name: netlocal_dovecot
+    volumes:
+      - dovecot_data:/var/vmail
+      - ./dovecot.conf:/etc/dovecot/dovecot.conf:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=imap"
+
+volumes:
+  dovecot_data:
+
+networks:
+  localnet_default:
+    external: true

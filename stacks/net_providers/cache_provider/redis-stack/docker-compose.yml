@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: netlocal_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=cache"
+      - "traefik.enable=true"
+      - "traefik.http.routers.redis-insight.rule=Host(`redis.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.redis-insight.loadbalancer.server.port=8001"
+
+volumes:
+  redis_data:
+
+networks:
+  localnet_default:
+    external: true
