@@ -1,15 +1,4 @@
-version: '3.8'
 
-services:
-  gopher:
-    image: gophernicus/gophernicus:latest
-    profiles: ["tag-legacy"]
-    container_name: netlocal_gopher
-    networks:
-      - localnet_default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.gopher.rule=Host(`gopher.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
 
   gemini:
     image: gemini/gemini-server:latest

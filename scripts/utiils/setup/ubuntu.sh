@@ -1,0 +1,1 @@
+# Configure a fresh ubuntu host

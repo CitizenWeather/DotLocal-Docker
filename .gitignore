@@ -4,3 +4,4 @@ volumes/
 acme.json
 *.log
 .DS_Store
+/deployed/
