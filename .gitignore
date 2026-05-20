@@ -1,6 +1,36 @@
+# Runtime secrets and config
 .env
+
+# Container data volumes
 volumes/
+
+# Generated configs
 **/config/generated/
+
+# TLS artifacts
 acme.json
+*.crt
+*.key
+*.pem
+
+# Backups
+backups/
+
+# Logs
 *.log
+**/*.log
+
+# macOS
 .DS_Store
+
+# Editor temp files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

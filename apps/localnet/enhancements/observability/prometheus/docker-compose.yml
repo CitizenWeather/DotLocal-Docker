@@ -2,16 +2,38 @@ version: '3.8'
 
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.51.0
     container_name: netlocal_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../../../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../../../config/prometheus/alerts:/etc/prometheus/alerts:ro
       - prometheus_data:/prometheus
     networks:
       - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=Host(`metrics.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - "netlocal.component=observability"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   prometheus_data:

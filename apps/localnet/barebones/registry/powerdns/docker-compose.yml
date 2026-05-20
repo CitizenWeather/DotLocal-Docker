@@ -5,7 +5,8 @@ services:
     image: powerdns/pdns-auth-mysql:4.8.0
     container_name: netlocal_powerdns
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       - PDNS_gmysql_host=postgres
       - PDNS_gmysql_port=5432
@@ -23,9 +24,24 @@ services:
       localnet_default:
     volumes:
       - registry_data:/var/lib/powerdns
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "netlocal.component=registry"
+    healthcheck:
+      test: ["CMD", "pdns_control", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   registry_data:

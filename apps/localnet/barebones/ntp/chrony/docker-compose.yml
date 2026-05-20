@@ -6,5 +6,15 @@ services:
     container_name: netlocal_chrony
     environment:
       - NTP_SERVERS=time.cloudflare.com,pool.ntp.org
+    cap_add:
+      - SYS_TIME
     networks:
       - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.component=ntp"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"

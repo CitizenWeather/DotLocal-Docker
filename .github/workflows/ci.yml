@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  validate-compose:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy env example
+        run: cp .env.example .env
+
+      - name: Install Docker Compose plugin
+        run: |
+          docker compose version
+
+      - name: Validate compose configuration
+        run: |
+          make validate-compose
+        env:
+          DNS_APP: coredns
+          CA_APP: smallstep
+          REGISTRY_APP: powerdns
+          GATEWAY_APP: traefik
+          DB_APP: postgres
+          CACHE_APP: redis
+          STORAGE_APP: minio
+          MESSAGING_APP: nats
+          EMAIL_TIER: "1"
+          ENABLE_OBSERVABILITY: "false"
+          NETLOCAL_ROOT_DOMAIN: net.local
+          NETLOCAL_SUBNET_BACKBONE: "169.254.0.0/16"
+          NETLOCAL_SUBNET_DEFAULT: "172.20.0.0/16"
+          POSTGRES_PASSWORD: ci_test
+          POWERDNS_API_KEY: ci_test
+          MINIO_ROOT_USER: netlocal
+          MINIO_ROOT_PASSWORD: ci_test
+
+  shellcheck:
+    name: Shell Script Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          find scripts -name '*.sh' -print0 | xargs -0 shellcheck --severity=warning
+
+  yamllint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint --config-file .yamllint .
+
+  validate-env-script:
+    name: Validate env script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy env example and validate
+        run: |
+          cp .env.example .env
+          bash scripts/validate-env.sh

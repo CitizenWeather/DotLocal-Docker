@@ -1,0 +1,82 @@
+groups:
+  - name: netlocal.core
+    interval: 30s
+    rules:
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been unreachable for more than 2 minutes."
+
+      - alert: ContainerHighCpuUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{name=~"netlocal_.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | humanize }}% CPU."
+
+      - alert: ContainerHighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{name=~"netlocal_.*"}
+          / container_spec_memory_limit_bytes{name=~"netlocal_.*"} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | humanize }}% of its memory limit."
+
+      - alert: DiskSpaceRunningLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"}
+          / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on host"
+          description: "Host filesystem has {{ $value | humanize }}% space remaining."
+
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL ({{ $labels.instance }}) has been unreachable for 1 minute."
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis ({{ $labels.instance }}) has been unreachable for 1 minute."
+
+      - alert: MinioDown
+        expr: minio_cluster_health_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MinIO is unhealthy"
+          description: "MinIO cluster health is degraded."
+
+      - alert: TLSCertExpiringSoon
+        expr: |
+          probe_ssl_earliest_cert_expiry - time() < 7 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS cert expiring soon for {{ $labels.instance }}"
+          description: "Certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}."

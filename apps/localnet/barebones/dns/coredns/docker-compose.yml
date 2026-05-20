@@ -12,5 +12,19 @@ services:
       localnet_backbone:
         ipv4_address: 169.254.0.2
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "netlocal.component=dns"
+      - "netlocal.layer=backbone"
+    healthcheck:
+      test: ["CMD", "dig", "+time=3", "+tries=1", "@127.0.0.1", "health.net.local"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
