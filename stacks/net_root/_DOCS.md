@@ -1,4 +1,11 @@
-# DotLocal Root (aka. Barebones) Stack
+# DotLocal Network Authority
 ### 
 
-# Deployment
+## Deployment
+
+
+### - Administration
+### - API
+### - Dashboards
+### - Policy
+### - Administration
