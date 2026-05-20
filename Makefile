@@ -106,6 +106,12 @@ down: ## Stop all services
 
 restart: down up ## Stop then start
 
+ps:
+	docker compose ps
+
+logs:
+	docker compose logs -f
+
 status: ## Show running service status
 	docker compose $(COMPOSE_FILES) ps
 
