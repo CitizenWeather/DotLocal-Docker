@@ -16,3 +16,4 @@ The billing subsystem tracks resource consumption across tenants and services fo
 - Integrates with the quotas subsystem to enforce limits and generate alerts when thresholds are approached
 - Usage records are stored in the primary database (PostgreSQL via `DB_APP` slot)
 - Status: planned — no billing service is deployed by default; this is a future management plane feature
+- **Cloud provider pricing integration** (optional, default-disabled): an extension module can pull public pricing APIs from AWS, GCP, Azure, and others to provide cost comparison or showback against equivalent cloud resources; activated via `EXTENSION_TAGS` and never enabled in the base stack
