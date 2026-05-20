@@ -1,0 +1,22 @@
+# CODEOWNERS — DotLocal-Docker
+#
+# Each line maps a path pattern to one or more owners (GitHub usernames or teams).
+# The last matching rule wins.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: project lead reviews everything
+*                           @aidankhogg
+
+# Core infrastructure compose files
+stacks/                     @aidankhogg
+build/                      @aidankhogg
+
+# Scripts — operational helpers
+scripts/                    @aidankhogg
+
+# Documentation
+docs/                       @aidankhogg
+*.md                        @aidankhogg
+
+# GitHub config and CI
+.github/                    @aidankhogg
