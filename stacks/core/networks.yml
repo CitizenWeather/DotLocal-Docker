@@ -1,5 +1,0 @@
-networks:
-  localnet_backbone:
-    external: true
-  localnet_default:
-    external: true
