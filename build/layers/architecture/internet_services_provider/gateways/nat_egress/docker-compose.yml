@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nat_egress:
+    image: alpine:3.19
+    container_name: ${NETLOCAL_PROJECT:-netlocal}_nat_egress
+    command: ["sh", "-c", "sleep infinity"]
+    restart: unless-stopped
+    networks:
+      - localnet_nat
+    labels:
+      - "netlocal.component=nat-egress"
+
+networks:
+  localnet_nat:
+    external: true
+    name: "${NETLOCAL_NETWORK_PREFIX}localnet_nat"

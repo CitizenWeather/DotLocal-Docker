@@ -1,6 +1,10 @@
 include .env
 export
 
+# Fallback defaults — overridden by values in .env when present
+NETLOCAL_PROJECT ?= netlocal
+NETLOCAL_NETWORK_PREFIX ?=
+
 # External networks declaration
 COMPOSE_BASE = -f stacks/core/networks.yml
 
@@ -40,13 +44,14 @@ COMPOSE_FILES += $(call include_if,$(STORAGE_DIR)/$(STORAGE_APP)/docker-compose.
 COMPOSE_FILES += $(call include_if,$(MESSAGING_DIR)/$(MESSAGING_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(POLICY_DIR)/$(POLICY_APP)/docker-compose.yml)
 
-# Fixed services — always included when their compose files exist
+# Fixed services (always included; skipped silently if not yet created)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/dnsmasq/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/heimdall/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/health/endpoint/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,build/docker/layers/authority/net_time/slots/chrony/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
 
 # ---------------------------------------------------------------------------
 # Email tier — additive/layered, not a slot (see docs/slots.md#email-tiers)
@@ -92,6 +97,8 @@ endif
 .PHONY: up down restart ps status logs clean bootstrap network-lab health \
         validate-slots switch switch-ca switch-cache switch-dns
 
+up:
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) up -d
 validate-slots:
 	@errors=0; \
 	for entry in \
@@ -122,18 +129,18 @@ up: validate-slots
 	docker compose $(COMPOSE_FILES) up -d
 
 down:
-	docker compose $(COMPOSE_FILES) down
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down
 
 restart: down up
 
 ps status:
-	docker compose $(COMPOSE_FILES) ps
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) ps
 
 logs:
-	docker compose $(COMPOSE_FILES) logs -f
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) logs -f
 
 clean: down
-	docker compose $(COMPOSE_FILES) down -v
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down -v
 	rm -rf volumes/*
 
 bootstrap:
