@@ -58,20 +58,27 @@ ifdef EXTENSION_TAGS
 endif
 
 # Targets
-.PHONY: up down restart status logs clean bootstrap network-lab health switch-ca switch-cache
+.PHONY: up down restart ps status logs clean bootstrap network-lab health switch-ca switch-cache
 
 up:
+	docker compose up -d
 	docker compose $(COMPOSE_FILES) up -d
 
 down:
+	docker compose down
 	docker compose $(COMPOSE_FILES) down
 
+restart:
+	docker compose restart
 restart: down up
 
+ps:
+	docker compose ps
 status:
 	docker compose $(COMPOSE_FILES) ps
 
 logs:
+	docker compose logs -f
 	docker compose $(COMPOSE_FILES) logs -f
 
 clean: down
