@@ -1,0 +1,22 @@
+# IoT extension tag
+# Activates when EXTENSION_TAGS includes 'iot'
+# Includes: ChirpStack LoRaWAN network server, ChirpStack gateway bridge
+
+services:
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    container_name: netlocal_chirpstack
+    environment:
+      - POSTGRESQL__DSN=postgresql://chirpstack:${CHIRPSTACK_DB_PASSWORD}@postgres/chirpstack?sslmode=disable
+    volumes:
+      - ./config/chirpstack:/etc/chirpstack:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=iot"
+      - "traefik.enable=true"
+      - "traefik.http.routers.chirpstack.rule=Host(`iot.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+networks:
+  localnet_default:
+    external: true

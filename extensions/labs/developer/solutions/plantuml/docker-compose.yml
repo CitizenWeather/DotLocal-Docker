@@ -1,0 +1,14 @@
+services:
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: netlocal_plantuml
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=lab"
+      - "traefik.enable=true"
+      - "traefik.http.routers.plantuml.rule=Host(`diagrams.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+networks:
+  localnet_default:
+    external: true

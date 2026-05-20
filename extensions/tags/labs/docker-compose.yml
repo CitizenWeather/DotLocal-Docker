@@ -1,3 +1,7 @@
+# Labs extension tag
+# Activates when EXTENSION_TAGS includes 'labs'
+# Includes: n8n workflow automation, PlantUML diagramming server, MkDocs documentation
+
 services:
   n8n:
     image: n8nio/n8n:latest
@@ -12,6 +16,16 @@ services:
       - "netlocal.component=lab"
       - "traefik.enable=true"
       - "traefik.http.routers.n8n.rule=Host(`n8n.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: netlocal_plantuml
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=lab"
+      - "traefik.enable=true"
+      - "traefik.http.routers.plantuml.rule=Host(`diagrams.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
 
 volumes:
   n8n_data:

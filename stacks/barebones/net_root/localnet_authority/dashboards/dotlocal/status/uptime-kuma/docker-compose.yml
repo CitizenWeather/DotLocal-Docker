@@ -1,0 +1,19 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: netlocal_uptime_kuma
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=status"
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`status.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+
+volumes:
+  uptime_kuma_data:
+
+networks:
+  localnet_default:
+    external: true
