@@ -1,0 +1,59 @@
+# DotLocal-Docker (NetLocal)
+
+> Self-hosted local network infrastructure stack driven entirely by Docker Compose. Provisions a complete `.local` (or custom TLD) intranet: DNS, certificate authority, service registry, API gateway, database, cache, object storage, messaging, email, and observability — all running locally.
+
+## Key concepts
+
+- **Swappable slots** — every infrastructure role (DNS, CA, gateway, etc.) is a named slot filled by one concrete implementation selected via an environment variable in `.env`.
+- **Two Docker networks** — `localnet_backbone` (169.254.0.0/16, internal) for infrastructure traffic; `localnet_default` (172.20.0.0/16) for application traffic through the gateway.
+- **Makefile composition** — `make up` assembles a multi-`-f` `docker compose` command from the slot selections in `.env`.
+
+## Navigation
+
+- [README.md](README.md) — overview, quick start, service endpoints
+- [SETUP.md](SETUP.md) — prerequisites and first-boot walkthrough
+- [docs/architecture.md](docs/architecture.md) — dual-network design, DNS/TLS flows, Makefile pattern
+- [docs/slots.md](docs/slots.md) — all swappable implementations per role
+- [docs/configuration.md](docs/configuration.md) — every `.env` variable
+- [docs/email.md](docs/email.md) — email tier selection
+- [docs/observability.md](docs/observability.md) — Prometheus, Grafana, Loki, Tempo
+- [docs/extensions.md](docs/extensions.md) — extension tag system
+- [docs/extending.md](docs/extending.md) — adding new implementations
+- [docs/operations.md](docs/operations.md) — health checks, DNS registration, cert issuance
+- [ROADMAP.md](ROADMAP.md) — planned capabilities and gaps
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute
+- [SECURITY.md](SECURITY.md) — vulnerability disclosure policy
+- [CHANGELOG.md](CHANGELOG.md) — version history
+
+## Source layout
+
+```
+stacks/         Core and barebones compose files (gateway, registry, policy, dashboards)
+build/          Architectural layer compose files (CA, NTP, messaging, observability)
+extensions/     Optional extension packs (IoT, chaos, legacy protocols, cloud emulators)
+scripts/        Operational helpers (bootstrap, healthcheck, switch-*, register-service, issue-cert)
+config/         Runtime config overrides; config/generated/ is git-ignored
+docs/           User-facing documentation
+```
+
+## Working with this repo
+
+- All operations go through `make`. Read the Makefile before editing compose files.
+- Never hardcode IPs — backbone IPs are in the `169.254.x.x` range and declared statically in compose files.
+- Every compose service must carry a `netlocal.component=<role>` Docker label.
+- `.env` is git-ignored. Copy `.env.example` to `.env` to configure a local instance.
+- Generated configs go to `**/config/generated/` (git-ignored). Runtime data goes to `volumes/` (git-ignored).
+- There are no automated tests. Use `make health` (`scripts/healthcheck.py`) to verify a running stack.
+
+## Adding a swappable implementation
+
+1. Find the slot's `*_DIR` variable in the Makefile.
+2. Create `<SLOT_DIR>/<impl-name>/docker-compose.yml`.
+3. Attach to the correct network with a static backbone IP if needed.
+4. Add `netlocal.component=<slot>` label.
+5. Set `<SLOT>_APP=<impl-name>` in `.env`.
+
+## Adding an extension
+
+1. Create `extensions/<tag>/docker-compose.yml`.
+2. Add the tag to `EXTENSION_TAGS` in `.env`.
