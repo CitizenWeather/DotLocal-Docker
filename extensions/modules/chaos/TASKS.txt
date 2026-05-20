@@ -1,0 +1,4 @@
+# TODO: Malicious actors / DDoS sim: Pumba, Chaos Mesh, Locust
+# TODO: Network impairment: Toxiproxy, tc/netem wrappers
+# TODO: Adversary emulation: MITRE Caldera, Atomic Red Team
+# TODO: Load / overload: k6, Vegeta

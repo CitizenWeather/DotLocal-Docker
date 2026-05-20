@@ -1,4 +1,4 @@
-# DotLocal-Docker — Master Capability Roadmap
+1# DotLocal-Docker — Master Capability Roadmap
 
 This document synthesises every gap, missing capability, and planned feature identified across the full platform analysis. It is the canonical reference for what exists, what is planned, and what is entirely absent. Use it to prioritise work, evaluate contributions, and communicate the platform's scope.
 

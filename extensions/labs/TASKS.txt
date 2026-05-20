@@ -1,0 +1,8 @@
+# TODO: State, not just services
+Most "lab" platforms are stateless — you spin them up, knock them down. localnet could persist world state:
+
+- Snapshot the entire intranet (DNS records, registrations, certs, users, data) and restore
+- Branch a localnet like a git branch — fork the world, experiment, merge or discard
+- Time-travel debugging at the infrastructure level
+
+This is the killer feature nobody else has. Docker has snapshots of containers; nobody has snapshots of internets.

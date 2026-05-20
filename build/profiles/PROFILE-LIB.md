@@ -1,13 +1,21 @@
 # DotLocal: Build Profiles
 Find
 
-1. **[Create a Profile](#create-a-build-profile)**
-   1. _[from Current Setup](#from-current)_
-2. **[Profile Index]()**
+   1. **[Create a Profile](#create-a-build-profile)**
+      1. _[from Current Setup](#from-current)_
+   2. **[Profile Index]()**
+
+-----
 
 #### Related:
 
-- Conf
+   - Conf
+
+### Profile Metadata
+
+   - Tags
+
+---
 
 ### Create a Build Profile
 

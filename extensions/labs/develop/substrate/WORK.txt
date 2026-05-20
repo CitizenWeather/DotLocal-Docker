@@ -1,0 +1,12 @@
+# TODO: -  localnet as a simulation substrate
+
+Stop thinking of it as exclusively "a dev tool that happens to model the internet." Start thinking of it as a
+discrete-event simulator that happens to run real software.
+
+Capabilities such as:
+- Tag every service with a simulated geography, latency, bandwidth, reliability profile
+- Run accelerated time ("simulate 30 days in 30 minutes")
+- Run experiments: "what happens to my CDN strategy if Asia-Pacific loses 40% of nodes?"
+- Pair with Artificials: agents that act over simulated time
+
+This puts localnet adjacent to ns-3, OMNeT++, Mininet — but with real container workloads instead of abstractions. That's a real niche.
