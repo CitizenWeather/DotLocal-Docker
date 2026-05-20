@@ -15,19 +15,19 @@ make health                 # verify all services are reachable
 
 ## Default service endpoints
 
-Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default `net.local`):
+Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default `.localnet`):
 
 | Service | URL | Notes |
 |---|---|---|
-| Dashboard | `http://dashboard.net.local` | Heimdall service portal |
-| Gateway | `https://*.net.local` | Caddy / Traefik reverse proxy |
-| CA | `https://ca.net.local` | Step-CA ACME endpoint |
-| Registry | `http://registrar.net.local:8081` | PowerDNS API |
-| Object storage | `http://minio.net.local:9000` | MinIO S3 API |
-| Storage console | `http://minio.net.local:9001` | MinIO web UI |
-| Status page | `http://status.net.local` | Uptime Kuma |
-| Mail (tier 1) | `http://mail.net.local` | Mailpit dev trap |
-| Grafana | `http://grafana.net.local` | When observability enabled |
+| Dashboard | `http://dashboard.localnet` | Heimdall service portal |
+| Gateway | `https://*.localnet` | Caddy / Traefik reverse proxy |
+| CA | `https://ca.localnet` | Step-CA ACME endpoint |
+| Registry | `http://registrar.localnet:8081` | PowerDNS API |
+| Object storage | `http://minio.localnet:9000` | MinIO S3 API |
+| Storage console | `http://minio.localnet:9001` | MinIO web UI |
+| Status page | `http://status.localnet` | Uptime Kuma |
+| Mail (tier 1) | `http://mail.localnet` | Mailpit dev trap |
+| Grafana | `http://grafana.localnet` | When observability enabled |
 
 ## Commands
 

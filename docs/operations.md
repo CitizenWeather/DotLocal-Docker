@@ -29,17 +29,17 @@ Runs `scripts/healthcheck.py`, which tests TCP or UDP reachability for every cor
 
 | Service | Host | Port | Protocol |
 |---|---|---|---|
-| DNS | `ca.net.local` | 53 | UDP |
-| CA | `ca.net.local` | 443 | TCP |
-| Registry | `registrar.net.local` | 8081 | TCP |
-| Gateway | `traefik.net.local` | 443 | TCP |
+| DNS | `ca.localnet` | 53 | UDP |
+| CA | `ca.localnet` | 443 | TCP |
+| Registry | `registrar.localnet` | 8081 | TCP |
+| Gateway | `traefik.localnet` | 443 | TCP |
 | PostgreSQL | `postgres` | 5432 | TCP |
 | Redis | `redis` | 6379 | TCP |
 | MinIO | `minio` | 9000 | TCP |
 | NATS | `nats` | 4222 | TCP |
 | DNS Forwarder | `dnsmasq` | 53 | UDP |
-| Dashboard | `dashboard.net.local` | 80 | TCP |
-| Health endpoint | `health.net.local` | 80 | TCP |
+| Dashboard | `dashboard.localnet` | 80 | TCP |
+| Health endpoint | `health.localnet` | 80 | TCP |
 
 Exits with code `0` if all checks pass, `1` if any fail. Each line shows `✅` or `❌`.
 
@@ -85,7 +85,7 @@ Example:
 
 ```bash
 ./scripts/lib/register-service.sh myapp 172.20.0.10
-# Creates an A record: myapp.net.local → 172.20.0.10
+# Creates an A record: myapp.localnet → 172.20.0.10
 ```
 
 The script sends a `PATCH` request to the PowerDNS HTTP API using `POWERDNS_API_KEY` from `.env`. The record is available immediately — no restart needed.
@@ -103,8 +103,8 @@ To issue a certificate for a service using the local CA:
 Example:
 
 ```bash
-./scripts/lib/issue-cert.sh myapp.net.local
-# Produces: myapp.net.local.crt and myapp.net.local.key
+./scripts/lib/issue-cert.sh myapp.localnet
+# Produces: myapp.localnet.crt and myapp.localnet.key
 ```
 
 This uses `step-cli` to request a certificate from Step-CA via ACME. The gateway issues its own certificates automatically — this is only needed for services that manage their own TLS.

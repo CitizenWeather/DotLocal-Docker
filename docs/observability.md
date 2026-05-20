@@ -8,8 +8,8 @@ NetLocal includes an optional observability stack that adds metrics, logs, trace
 
 | Service | Image | Role | URL |
 |---|---|---|---|
-| Prometheus | `prom/prometheus` | Metrics scraping and storage | `http://prometheus.net.local:9090` |
-| Grafana | `grafana/grafana` | Dashboards and alerting | `http://grafana.net.local:3000` |
+| Prometheus | `prom/prometheus` | Metrics scraping and storage | `http://prometheus.localnet:9090` |
+| Grafana | `grafana/grafana` | Dashboards and alerting | `http://grafana.localnet:3000` |
 | Loki | `grafana/loki` | Log aggregation | Internal; queried via Grafana |
 | Promtail | `grafana/promtail` | Log shipper (Docker logs → Loki) | Internal only |
 | Tempo | `grafana/tempo` | Distributed tracing | Internal; queried via Grafana |
@@ -50,7 +50,7 @@ Prometheus scrapes metrics from services that expose a `/metrics` endpoint. Scra
 To add a new scrape target, edit that file and reload Prometheus:
 
 ```bash
-curl -X POST http://prometheus.net.local:9090/-/reload
+curl -X POST http://prometheus.localnet:9090/-/reload
 ```
 
 ---
@@ -66,7 +66,7 @@ Promtail runs as a sidecar that reads Docker container logs (via the Docker sock
 Tempo receives OpenTelemetry traces. To send traces from your own services, configure the OTLP exporter endpoint:
 
 ```
-OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo.net.local:4317
+OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo.localnet:4317
 ```
 
 Traces are visible in Grafana's Explore view using the Tempo datasource.

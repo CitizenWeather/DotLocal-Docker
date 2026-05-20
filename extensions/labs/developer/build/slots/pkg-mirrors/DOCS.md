@@ -14,6 +14,6 @@ The package mirror slot provides local caching mirrors for public package regist
 - Covers npm (Verdaccio), Python pip/PyPI (devpi), Debian/Ubuntu apt (apt-cacher-ng), and Docker Hub (Registry mirror)
 - All mirrors cache upstream packages on first request, subsequent requests are served locally without internet access
 - Mirror endpoints are configured via environment variables or `.npmrc`/`pip.conf` settings distributed to developer containers
-- Proxy URLs follow the pattern `<pkg-type>-mirror.<ROOT_DOMAIN>` (e.g., `npm-mirror.net.local`)
+- Proxy URLs follow the pattern `<pkg-type>-mirror.<ROOT_DOMAIN>` (e.g., `npm-mirror.localnet`)
 - Significantly reduces CI build times and eliminates rate limiting issues with public registries
 - Status: optional developer slot — high value for teams with slow internet or strict network policies
