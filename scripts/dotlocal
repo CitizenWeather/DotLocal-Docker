@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# dotlocal — zero-downtime lifecycle CLI for DotLocal-Docker.
+#
+# Subcommands:
+#   plan                 Show what `apply` would do (diff desired vs running).
+#   apply [--auto-approve] [--skip-pull] [--force] [--allow-major]
+#                        Reconcile the running stack to the desired state,
+#                        tier-by-tier, with drain hooks and health gating.
+#   rollback [SNAPSHOT]  Restore a previous snapshot (defaults to most recent).
+#   status               Summarise the most recent apply.
+#   history [--prune]    List past applies / prune old snapshots.
+#
+# The bash layer is a thin shim: it resolves the compose-file list (the same
+# way the Makefile does, via scripts/dotlocal_lib/compose_files.sh) and execs
+# the Python core under scripts/dotlocal_lib/.
+
+set -euo pipefail
+
+DOTLOCAL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export DOTLOCAL_ROOT
+
+# shellcheck source=scripts/dotlocal_lib/compose_files.sh
+. "$DOTLOCAL_ROOT/scripts/dotlocal_lib/compose_files.sh"
+
+exec python3 -m scripts.dotlocal_lib.cli \
+    --root "$DOTLOCAL_ROOT" \
+    --project "$NETLOCAL_PROJECT" \
+    --compose-files "$COMPOSE_FILES" \
+    "$@"

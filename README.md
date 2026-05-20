@@ -44,6 +44,25 @@ Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default
 | `make network-lab` | Deploy containerlab network topology |
 | `make switch-ca` | Switch certificate authority implementation |
 | `make switch-cache` | Switch cache implementation |
+| `make plan` | Show what `apply` would do (zero-downtime diff vs running stack) |
+| `make apply` | Reconcile running stack to desired state — tier-by-tier, drain + health-gated, with snapshot + rollback |
+| `make rollback` | Roll back to the previous snapshot (or `make rollback SNAPSHOT=<timestamp>`) |
+| `make apply-status` | Show the most recent apply result |
+| `make apply-history` | List past applies |
+
+## Zero-downtime upgrades
+
+When you change `.env`, bump an image tag, or swap a slot, run `make plan` to see
+the diff (Terraform-style), then `make apply` to roll it out. The apply pipeline
+reconciles the stack tier-by-tier (backbone → data → identity → gateway → apps →
+observability), invokes per-service drain hooks for stateful services (postgres,
+redis, rabbitmq, minio), gates each tier on container health, and snapshots the
+prior state under `volumes/_apply/<timestamp>/` so `make rollback` can restore it.
+
+Slot switches (`./scripts/lib/switch.sh`, `make switch-cache`, etc.) automatically
+route through `dotlocal apply`, so you no longer lose every TCP connection on a
+slot swap. Set `SWITCH_LEGACY=1` to fall back to the old `make down && make up`
+behaviour.
 
 ## Documentation
 

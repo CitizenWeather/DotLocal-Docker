@@ -115,7 +115,8 @@ endif
 # Targets
 # ---------------------------------------------------------------------------
 .PHONY: up down restart ps status logs clean bootstrap network-lab health \
-        validate-slots switch switch-ca switch-cache switch-dns
+        validate-slots switch switch-ca switch-cache switch-dns \
+        plan apply rollback apply-status apply-history
 
 # Validates that every non-blank *_APP variable resolves to an existing
 # compose file. Blank values (IDENTITY_APP, SECRETS_APP) are intentionally
@@ -195,3 +196,24 @@ switch-cache:
 
 switch-dns:
 	@./scripts/lib/switch.sh dns $(filter-out $@,$(MAKECMDGOALS))
+
+# ---------------------------------------------------------------------------
+# Zero-downtime lifecycle — see scripts/dotlocal_lib/ for implementation.
+# `plan`/`apply`/`rollback` reconcile the running stack to the desired state
+# tier-by-tier, with drain hooks and health gating, preserving named volumes.
+# `up`/`down`/`restart` above are left intact for backwards compatibility.
+# ---------------------------------------------------------------------------
+plan:
+	@./scripts/dotlocal plan
+
+apply:
+	@./scripts/dotlocal apply $(if $(AUTO_APPROVE),--auto-approve,)
+
+rollback:
+	@./scripts/dotlocal rollback $(SNAPSHOT)
+
+apply-status:
+	@./scripts/dotlocal status
+
+apply-history:
+	@./scripts/dotlocal history

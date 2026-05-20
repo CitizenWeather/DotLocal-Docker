@@ -46,5 +46,13 @@ fi
 sed -i.bak "s/^${ENV_VAR}=.*/${ENV_VAR}=${IMPL}/" .env
 
 echo "Switched $ENV_VAR → $IMPL"
-make down
-make up
+
+# Reconcile via zero-downtime apply (preserves named volumes, drains stateful
+# services, gates each tier on healthchecks). Set SWITCH_LEGACY=1 to fall
+# back to the old `make down && make up` behaviour.
+if [ "${SWITCH_LEGACY:-0}" = "1" ]; then
+    make down
+    make up
+else
+    exec ./scripts/dotlocal apply --auto-approve
+fi

@@ -17,6 +17,12 @@ services:
     labels:
       - "netlocal.component=ca"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-check-certificate -q -O- https://127.0.0.1:9000/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   ca_data:

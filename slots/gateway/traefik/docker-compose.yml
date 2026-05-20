@@ -22,6 +22,12 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.tls.certresolver=localca"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 5s
 
 volumes:
   traefik_data:

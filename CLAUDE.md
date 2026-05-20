@@ -26,7 +26,22 @@ make health      # Run scripts/healthcheck.py — checks TCP/UDP reachability of
 make network-lab # Deploy the containerlab network topology (containerlab must be installed)
 make switch-ca   # Wrapper for scripts/lib/switch-ca.sh — changes CA provider
 make switch-cache # Wrapper for scripts/lib/switch-cache — changes cache provider
+
+# Zero-downtime lifecycle (see scripts/dotlocal_lib/)
+make plan        # Show what `apply` would do (diff desired vs running)
+make apply       # Reconcile running stack tier-by-tier, drain + health-gated, snapshot + rollback
+make rollback    # Restore previous snapshot — or `make rollback SNAPSHOT=<timestamp>`
+make apply-status # Most recent apply result
+make apply-history # List past applies
 ```
+
+The `plan`/`apply`/`rollback` triplet replaces `make down && make up` for
+normal config changes. It preserves named volumes, drains stateful services
+before recreate, and gates each tier on container health. Snapshots live
+under `volumes/_apply/<timestamp>/`; audit log at
+`volumes/_apply/history.jsonl`. `./scripts/lib/switch.sh` (and the
+`make switch-*` wrappers) automatically route through `dotlocal apply`;
+set `SWITCH_LEGACY=1` to use the legacy down/up behaviour.
 
 To switch a swappable component:
 ```bash

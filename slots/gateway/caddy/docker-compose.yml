@@ -19,6 +19,12 @@ services:
     labels:
       - "netlocal.component=gateway"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 5s
 
 volumes:
   caddy_data:
