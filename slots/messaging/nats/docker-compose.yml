@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  nats:
+    image: nats:2.10-alpine
+    container_name: netlocal_nats
+    command: -js
+    volumes:
+      - messaging_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=messaging"
+
+volumes:
+  messaging_data:

@@ -10,46 +10,51 @@ $(if $(wildcard $(1)),-f $(1))
 endef
 
 # ---------------------------------------------------------------------------
-# Swappable slot base paths
-# Add a new row here when a slot gains a new location in stacks/
+# ROLE SLOTS — mandatory roles; exactly one implementation runs per slot.
+# Each *_DIR points to the slot's home under slots/<role>/; *_APP selects
+# the implementation subdirectory. Set *_APP in .env to switch.
 # ---------------------------------------------------------------------------
-GATEWAY_DIR   = stacks/barebones/net_root/intranet_service_provider/base/gateway
-REGISTRY_DIR  = stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core
-POLICY_DIR    = stacks/barebones/net_root/localnet_authority/policy
-CACHE_DIR     = stacks/net_providers/cache_provider
-MESSAGING_DIR = build/layers/barebones/infrastructure/messages
-
-# Slots not yet populated (compose files will be found once created under these dirs)
-DNS_DIR      = stacks/barebones/net_root/intranet_service_provider/base/dns
-CA_DIR       = stacks/barebones/net_root/intranet_service_provider/base/cert_authority
-DB_DIR       = stacks/net_providers/database
-STORAGE_DIR  = stacks/net_providers/storage
+DNS_DIR       = slots/dns
+CA_DIR        = slots/ca
+REGISTRY_DIR  = slots/registry
+GATEWAY_DIR   = slots/gateway
+DB_DIR        = slots/db
+CACHE_DIR     = slots/cache
+STORAGE_DIR   = slots/storage
+MESSAGING_DIR = slots/messaging
+POLICY_DIR    = slots/policy
 
 # ---------------------------------------------------------------------------
 # Compose file list
 # ---------------------------------------------------------------------------
 COMPOSE_FILES = $(COMPOSE_BASE)
 
-# Swappable slots
-COMPOSE_FILES += $(call include_if,$(GATEWAY_DIR)/$(GATEWAY_APP)/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,$(REGISTRY_DIR)/$(REGISTRY_APP)/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,$(POLICY_DIR)/$(POLICY_APP)/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,$(CACHE_DIR)/$(CACHE_APP)/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,$(MESSAGING_DIR)/$(MESSAGING_APP)/docker-compose.yml)
+# Role slots — silently skipped if the implementation compose file is absent
 COMPOSE_FILES += $(call include_if,$(DNS_DIR)/$(DNS_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(CA_DIR)/$(CA_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(REGISTRY_DIR)/$(REGISTRY_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(GATEWAY_DIR)/$(GATEWAY_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(DB_DIR)/$(DB_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(CACHE_DIR)/$(CACHE_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(STORAGE_DIR)/$(STORAGE_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(MESSAGING_DIR)/$(MESSAGING_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(POLICY_DIR)/$(POLICY_APP)/docker-compose.yml)
 
-# Fixed services (always included; skipped silently if not yet created)
+# Fixed services — always included when their compose files exist
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/dnsmasq/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/heimdall/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/health/endpoint/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/docker/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
 
-# Email tier
+# ---------------------------------------------------------------------------
+# Email tier — additive/layered, not a slot (see docs/slots.md#email-tiers)
+# EMAIL_TIER=1: Mailpit only (dev trap)
+# EMAIL_TIER=2: Stalwart + SnappyMail webmail
+# EMAIL_TIER=3: tier 2 + Dovecot IMAP
+# EMAIL_TIER=4: tier 3 + Postfix relay (real outbound delivery)
+# ---------------------------------------------------------------------------
 ifeq ($(EMAIL_TIER),1)
     COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/mailpit/docker-compose.yml)
 else
@@ -63,13 +68,20 @@ else
     endif
 endif
 
-# Observability
+# ---------------------------------------------------------------------------
+# Observability — opt-in feature flag, not a slot
+# ENABLE_OBSERVABILITY=true starts Prometheus, Grafana, Loki, Promtail, Tempo
+# ---------------------------------------------------------------------------
 ifeq ($(ENABLE_OBSERVABILITY),true)
-    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
-    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
 endif
 
-# Extensions – each tag adds its own compose file under extensions/<tag>/
+# ---------------------------------------------------------------------------
+# EXTENSION PACKS — optional, additive bundles activated by tag.
+# Unlike slots, extensions are not mutually exclusive and may add many
+# services at once. Set EXTENSION_TAGS in .env (space-separated).
+# ---------------------------------------------------------------------------
 ifdef EXTENSION_TAGS
     $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += $(call include_if,extensions/$(tag)/docker-compose.yml)))
 endif
@@ -78,9 +90,35 @@ endif
 # Targets
 # ---------------------------------------------------------------------------
 .PHONY: up down restart ps status logs clean bootstrap network-lab health \
-        switch-ca switch-cache switch-dns
+        validate-slots switch switch-ca switch-cache switch-dns
 
-up:
+validate-slots:
+	@errors=0; \
+	for entry in \
+	  "DNS_APP:$(DNS_DIR)/$(DNS_APP)" \
+	  "CA_APP:$(CA_DIR)/$(CA_APP)" \
+	  "REGISTRY_APP:$(REGISTRY_DIR)/$(REGISTRY_APP)" \
+	  "GATEWAY_APP:$(GATEWAY_DIR)/$(GATEWAY_APP)" \
+	  "DB_APP:$(DB_DIR)/$(DB_APP)" \
+	  "CACHE_APP:$(CACHE_DIR)/$(CACHE_APP)" \
+	  "STORAGE_APP:$(STORAGE_DIR)/$(STORAGE_APP)" \
+	  "MESSAGING_APP:$(MESSAGING_DIR)/$(MESSAGING_APP)" \
+	  "POLICY_APP:$(POLICY_DIR)/$(POLICY_APP)"; do \
+	  name=$$(echo "$$entry" | cut -d: -f1); \
+	  path=$$(echo "$$entry" | cut -d: -f2)/docker-compose.yml; \
+	  if [ ! -f "$$path" ]; then \
+	    echo "  MISSING $$name → $$path" >&2; \
+	    errors=$$((errors+1)); \
+	  fi; \
+	done; \
+	if [ "$$errors" -gt 0 ]; then \
+	  echo ""; \
+	  echo "$$errors slot(s) have no compose file. Create them or update .env." >&2; \
+	  exit 1; \
+	fi; \
+	echo "All configured slots have compose files."
+
+up: validate-slots
 	docker compose $(COMPOSE_FILES) up -d
 
 down:
@@ -107,11 +145,16 @@ network-lab:
 health:
 	./scripts/healthcheck.py
 
+# Generic slot switcher: make switch SLOT=<slot> IMPL=<impl>
+switch:
+	@./scripts/lib/switch.sh $(SLOT) $(IMPL)
+
+# Convenience wrappers (delegate to the generic switch target)
 switch-ca:
-	./scripts/lib/switch-ca.sh $(filter-out $@,$(MAKECMDGOALS))
+	@./scripts/lib/switch.sh ca $(filter-out $@,$(MAKECMDGOALS))
 
 switch-cache:
-	./scripts/lib/switch-cache $(filter-out $@,$(MAKECMDGOALS))
+	@./scripts/lib/switch.sh cache $(filter-out $@,$(MAKECMDGOALS))
 
 switch-dns:
-	./scripts/lib/switch-dns.sh $(filter-out $@,$(MAKECMDGOALS))
+	@./scripts/lib/switch.sh dns $(filter-out $@,$(MAKECMDGOALS))
