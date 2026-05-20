@@ -1,0 +1,7 @@
+build-profile:
+  name: ""
+  desc: ""
+  version: "v0.0.1a"
+  metadata:
+    ext_type: "plugin"
+  instructions: none
