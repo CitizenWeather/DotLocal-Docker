@@ -1,6 +1,10 @@
 include .env
 export
 
+# Fallback defaults — overridden by values in .env when present
+NETLOCAL_PROJECT ?= netlocal
+NETLOCAL_NETWORK_PREFIX ?=
+
 # External networks declaration
 COMPOSE_BASE = -f stacks/core/networks.yml
 
@@ -48,6 +52,7 @@ COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_pr
 COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
 
 # Email tier
 ifeq ($(EMAIL_TIER),1)
@@ -81,21 +86,21 @@ endif
         switch-ca switch-cache switch-dns
 
 up:
-	docker compose $(COMPOSE_FILES) up -d
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) up -d
 
 down:
-	docker compose $(COMPOSE_FILES) down
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down
 
 restart: down up
 
 ps status:
-	docker compose $(COMPOSE_FILES) ps
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) ps
 
 logs:
-	docker compose $(COMPOSE_FILES) logs -f
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) logs -f
 
 clean: down
-	docker compose $(COMPOSE_FILES) down -v
+	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down -v
 	rm -rf volumes/*
 
 bootstrap:
