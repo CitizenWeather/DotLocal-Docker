@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  step-ca:
+    image: smallstep/step-ca:0.27.0
+    container_name: netlocal_step_ca
+    environment:
+      DOCKER_STEPCA_INIT_NAME: "NetLocal CA"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "ca.${NETLOCAL_ROOT_DOMAIN:-net.local},169.254.0.4,localhost"
+      DOCKER_STEPCA_INIT_REMOTE_MANAGEMENT: "false"
+      DOCKER_STEPCA_INIT_ACME: "true"
+    volumes:
+      - ca_data:/home/step
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.4
+    labels:
+      - "netlocal.component=ca"
+    restart: unless-stopped
+
+volumes:
+  ca_data:

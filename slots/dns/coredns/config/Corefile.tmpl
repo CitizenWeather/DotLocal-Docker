@@ -1,0 +1,18 @@
+# CoreDNS configuration template.
+# Rendered at startup by the coredns-init container using envsubst.
+# Variable: NETLOCAL_ROOT_DOMAIN (set in .env)
+
+${NETLOCAL_ROOT_DOMAIN}:53 {
+    file /etc/coredns/zones/db.${NETLOCAL_ROOT_DOMAIN}
+    log
+    errors
+    reload 30s
+}
+
+.:53 {
+    forward . 169.254.0.3
+    log
+    errors
+    cache 300
+    health
+}

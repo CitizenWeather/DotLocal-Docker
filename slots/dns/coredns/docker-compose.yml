@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  coredns-init:
+    image: alpine:latest
+    container_name: netlocal_coredns_init
+    restart: "no"
+    environment:
+      NETLOCAL_ROOT_DOMAIN: ${NETLOCAL_ROOT_DOMAIN:-net.local}
+    command: >
+      sh -c "
+        apk add --no-cache gettext &&
+        mkdir -p /out/zones &&
+        envsubst < /tmpl/Corefile.tmpl > /out/Corefile &&
+        envsubst < /tmpl/zones/db.localnet.tmpl > /out/zones/db.$${NETLOCAL_ROOT_DOMAIN:-net.local}
+      "
+    volumes:
+      - ./config:/tmpl:ro
+      - coredns_config:/out
+
+  coredns:
+    image: coredns/coredns:1.11.1
+    container_name: netlocal_coredns
+    command: -conf /etc/coredns/Corefile
+    depends_on:
+      coredns-init:
+        condition: service_completed_successfully
+    volumes:
+      - coredns_config:/etc/coredns:ro
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.2
+    labels:
+      - "netlocal.component=dns"
+    restart: unless-stopped
+
+volumes:
+  coredns_config:
