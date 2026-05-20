@@ -53,7 +53,7 @@ There are no test suites. The health check in `scripts/healthcheck.py` is the op
 
 ### Dual Docker networks
 
-Two Docker bridge networks are created by `make bootstrap` and declared as `external` in `core/networks.yml`:
+Two Docker bridge networks are created by `make bootstrap` and declared as `external` in `stacks/core/networks.yml`:
 
 - **`localnet_backbone`** (`169.254.0.0/16`, internal) — infrastructure-only traffic: DNS resolver → registry, CA, backbone services. Services here get static IPs in the `169.254.x.x` range.
 - **`localnet_default`** (`172.20.0.0/16`, internet-facing) — application traffic routed through the gateway.
@@ -62,19 +62,18 @@ Core infrastructure services (DNS, CA, registry) are attached to `localnet_backb
 
 ### Makefile composition pattern
 
-The Makefile builds a single multi-`-f` `docker compose` command. It always includes `core/networks.yml`, then conditionally adds app compose files based on `.env` variables:
+The Makefile builds a single multi-`-f` `docker compose` command. It always includes `stacks/core/networks.yml`, then conditionally adds compose files based on `.env` variables. Each swappable slot has a base directory defined in the Makefile; the selected implementation is appended as a subdirectory:
 
 ```
-DNS_APP=coredns         → apps/localnet/barebones/dns/coredns/docker-compose.yml
-CA_APP=smallstep        → apps/localnet/barebones/ca/smallstep/docker-compose.yml
-REGISTRY_APP=powerdns   → apps/localnet/barebones/registry/powerdns/docker-compose.yml
-GATEWAY_APP=caddy       → apps/localnet/barebones/gateway/caddy/docker-compose.yml
-DB_APP=postgres         → apps/localnet/barebones/database/postgres/docker-compose.yml
-CACHE_APP=redis         → apps/localnet/barebones/cache/redis/docker-compose.yml
+GATEWAY_APP=caddy     → stacks/barebones/net_root/intranet_service_provider/base/gateway/caddy/docker-compose.yml
+REGISTRY_APP=powerdns → stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/powerdns/docker-compose.yml
+POLICY_APP=opa        → stacks/barebones/net_root/localnet_authority/policy/opa/docker-compose.yml
+CACHE_APP=redis       → stacks/net_providers/cache_provider/redis/docker-compose.yml
+MESSAGING_APP=nats    → build/layers/barebones/infrastructure/messages/nats/docker-compose.yml
 ...
 ```
 
-Fixed (non-swappable) apps are always appended regardless of `.env`: dnsmasq forwarder, Heimdall dashboard, health endpoint, fabric router, Squid proxy, Chrony NTP, whoisd, Uptime Kuma.
+Files are included via `include_if` which silently skips missing implementations. Fixed (non-swappable) services are always appended: dnsmasq forwarder, Heimdall dashboard, health endpoint, Chrony NTP, whoisd, Uptime Kuma.
 
 ### Email tiers
 
@@ -86,27 +85,13 @@ Fixed (non-swappable) apps are always appended regardless of `.env`: dnsmasq for
 
 ### Observability stack
 
-When `ENABLE_OBSERVABILITY=true`, four services are added: Prometheus, Grafana, Loki, Promtail, Tempo. Configuration lives in `config/grafana/provisioning/` and `config/prometheus/`.
+When `ENABLE_OBSERVABILITY=true`, services are added from `build/layers/architecture/.supervisor/maintenance/observability/`. Configuration for Loki, Promtail, and Tempo lives alongside their compose files in `slots/<service>/config/`.
 
 ### Extensions
 
-Optional extension packs live in `apps/extensions/`. They use Docker Compose `profiles` keyed by tags: `--profile tag-<name>`. Active extensions are listed in `EXTENSION_TAGS` in `.env`.
+Optional extension packs live in the top-level `extensions/` directory. The Makefile expects `extensions/<tag>/docker-compose.yml` for each active tag in `EXTENSION_TAGS`. Standalone extension stacks (labs, technologies, native modules) live in `stacks/extensions/`.
 
-Current extensions:
-- `iot` — Eclipse Mosquitto (MQTT) + ChirpStack LoRa server
-- `chaos` — chaos engineering tools
-- `labs` — experimental services
-- `legacy` — older/deprecated services
-
-### Faux providers
-
-`apps/faux_provider/` contains local emulators of cloud or external services:
-- `cloud_local` — LocalStack (AWS), Azurite (Azure), GCP emulators
-- `mail_local` — local mail testing
-- `registry_local` — local container registry
-- `search_local` — local search engine
-
-These are not included by default and must be manually added to `COMPOSE_FILES` or treated as standalone compose stacks.
+Cloud/service emulators (LocalStack, Supabase, etc.) are in `extensions/as-a-service/` and are not auto-included — use them as standalone compose stacks.
 
 ### DNS flow
 
@@ -125,32 +110,47 @@ Every compose service carries a `netlocal.component=<role>` Docker label (e.g. `
 ### Directory layout summary
 
 ```
-core/               Network definitions, containerlab topology, FRR config
-apps/
-  localnet/
-    barebones/      Swappable implementations for each infrastructure role
-    enhancements/   Optional add-ons: dashboard, observability, whois
-  extensions/       Tag-activated extension packs (iot, chaos, labs, legacy)
-  faux_provider/    Local emulators for cloud/external services
-config/             Static service configs (Grafana, Prometheus, Keepalived, Squid)
-scripts/            bootstrap.sh, healthcheck.py, and lib/ helpers
-deployed/           Rendered/merged compose output (for reference or deployment)
-examples/           Example deployed configurations
+stacks/
+  core/             External networks declaration, containerlab topology
+  barebones/        Core infrastructure compose files (gateway, registry, policy, health, dashboards)
+  net_providers/    Provider-role services (mail, cache, DNS registrar, hosting)
+  net_web/          Web-tier services (whois, full/light web profiles)
+  extensions/       Standalone extension stacks (labs, technologies, native modules, hardware)
+build/
+  layers/           Architectural layer compose files and configs
+    authority/      CA, NTP, identity services
+    barebones/      Infrastructure primitives (messaging: NATS, Kafka, etc.)
+    architecture/   Supervisor plane (observability, tenancy, secrets, backups)
+  profiles/         Build profiles (out-of-the-box configurations)
+extensions/         Tag-activated extension packs (referenced by EXTENSION_TAGS in .env)
+  as-a-service/     Cloud/service emulators (Supabase, LocalStack, etc.) — standalone stacks
+  labs/             Lab environments (developer, data, security)
+  technologies/     Specialist technology stacks (LoRaWAN, mesh, cellular, etc.)
+config/             Runtime configuration overrides and generated output
+  generated/        Git-ignored; written at runtime by services
+scripts/
+  bootstrap.sh      First-time setup (creates Docker networks, runtime dirs)
+  healthcheck.py    Operational health check
+  lib/              Operational helpers (switch-ca.sh, switch-cache, switch-dns.sh, register-service.sh, issue-cert.sh)
+  utils/            Utility scripts (backup, restore, device provisioning)
+docs/               User-facing documentation
 ```
 
 ### Adding a new swappable implementation
 
-1. Create `apps/localnet/barebones/<slot>/<impl-name>/docker-compose.yml`
-2. Attach the service to the appropriate network(s) with a static backbone IP if needed
-3. Add a `netlocal.component=<slot>` label
-4. Add a line in the Makefile's `include_app` block for the new slot variable
-5. Document the new `<SLOT>_APP` variable in `.env.example`
+1. Identify the slot's `*_DIR` variable in the Makefile (e.g. `GATEWAY_DIR`)
+2. Create `<SLOT_DIR>/<impl-name>/docker-compose.yml`
+3. Attach the service to the appropriate network(s) with a static backbone IP if needed
+4. Add a `netlocal.component=<slot>` label
+5. Set `<SLOT>_APP=<impl-name>` in `.env` — the Makefile picks it up automatically
 
-### Adding a new extension
+If the slot has no `*_DIR` entry yet, add one in the Makefile's "Swappable slot base paths" section.
 
-1. Create `apps/extensions/<tag>/docker-compose.yml` with `profiles: ["tag-<tag>"]` on every service
-2. Add `EXTENSION_TAGS` entry in `.env` to activate it
-3. The Makefile automatically includes `--profile tag-<tag> -f extensions/<tag>/docker-compose.yml` for each tag in `EXTENSION_TAGS`
+### Adding a new extension (tag-activated)
+
+1. Create `extensions/<tag>/docker-compose.yml`
+2. Add the tag to `EXTENSION_TAGS` in `.env`
+3. The Makefile automatically includes `-f extensions/<tag>/docker-compose.yml` for each active tag
 
 ---
 

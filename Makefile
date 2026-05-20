@@ -1,84 +1,97 @@
 include .env
 export
 
-# Base compose files (networks)
-COMPOSE_BASE = -f core/networks.yml
+# External networks declaration
+COMPOSE_BASE = -f stacks/core/networks.yml
 
-# Helper to include an app if its directory exists
-define include_app
-$(if $(wildcard apps/$(1)/$(2)/docker-compose.yml),-f apps/$(1)/$(2)/docker-compose.yml)
+# Helper to include a compose file only if it exists
+define include_if
+$(if $(wildcard $(1)),-f $(1))
 endef
 
-# Mandatory apps – always included
-COMPOSE_FILES = $(COMPOSE_BASE)
-COMPOSE_FILES += $(call include_app,dns,$(DNS_APP))
-COMPOSE_FILES += $(call include_app,ca,$(CA_APP))
-COMPOSE_FILES += $(call include_app,registry,$(REGISTRY_APP))
-COMPOSE_FILES += $(call include_app,policy,$(POLICY_APP))
-COMPOSE_FILES += $(call include_app,gateway,$(GATEWAY_APP))
-COMPOSE_FILES += $(call include_app,database,$(DB_APP))
-COMPOSE_FILES += $(call include_app,cache,$(CACHE_APP))
-COMPOSE_FILES += $(call include_app,storage,$(STORAGE_APP))
-COMPOSE_FILES += $(call include_app,messaging,$(MESSAGING_APP))
-COMPOSE_FILES += -f apps/dns-forwarder/dnsmasq/docker-compose.yml
-COMPOSE_FILES += -f apps/dashboard/heimdall/docker-compose.yml
-COMPOSE_FILES += -f apps/health/health-endpoint/docker-compose.yml
-COMPOSE_FILES += -f apps/fabric/default-router/docker-compose.yml
-COMPOSE_FILES += -f apps/fabric/squid/docker-compose.yml
-COMPOSE_FILES += -f apps/ntp/chrony/docker-compose.yml
-COMPOSE_FILES += -f apps/whois/whoisd/docker-compose.yml
-COMPOSE_FILES += -f apps/status/uptime-kuma/docker-compose.yml
+# ---------------------------------------------------------------------------
+# Swappable slot base paths
+# Add a new row here when a slot gains a new location in stacks/
+# ---------------------------------------------------------------------------
+GATEWAY_DIR   = stacks/barebones/net_root/intranet_service_provider/base/gateway
+REGISTRY_DIR  = stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core
+POLICY_DIR    = stacks/barebones/net_root/localnet_authority/policy
+CACHE_DIR     = stacks/net_providers/cache_provider
+MESSAGING_DIR = build/layers/barebones/infrastructure/messages
 
-# Email tier selection
+# Slots not yet populated (compose files will be found once created under these dirs)
+DNS_DIR      = stacks/barebones/net_root/intranet_service_provider/base/dns
+CA_DIR       = stacks/barebones/net_root/intranet_service_provider/base/cert_authority
+DB_DIR       = stacks/net_providers/database
+STORAGE_DIR  = stacks/net_providers/storage
+
+# ---------------------------------------------------------------------------
+# Compose file list
+# ---------------------------------------------------------------------------
+COMPOSE_FILES = $(COMPOSE_BASE)
+
+# Swappable slots
+COMPOSE_FILES += $(call include_if,$(GATEWAY_DIR)/$(GATEWAY_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(REGISTRY_DIR)/$(REGISTRY_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(POLICY_DIR)/$(POLICY_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(CACHE_DIR)/$(CACHE_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(MESSAGING_DIR)/$(MESSAGING_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(DNS_DIR)/$(DNS_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(CA_DIR)/$(CA_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(DB_DIR)/$(DB_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(STORAGE_DIR)/$(STORAGE_APP)/docker-compose.yml)
+
+# Fixed services (always included; skipped silently if not yet created)
+COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/dnsmasq/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/heimdall/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/health/endpoint/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
+
+# Email tier
 ifeq ($(EMAIL_TIER),1)
-    COMPOSE_FILES += --profile tier1 -f apps/email/mailpit/docker-compose.yml
+    COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/mailpit/docker-compose.yml)
 else
-    COMPOSE_FILES += -f apps/email/stalwart/docker-compose.yml
-    COMPOSE_FILES += -f apps/webmail/snappymail/docker-compose.yml
+    COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/stalwart/docker-compose.yml)
     ifeq ($(EMAIL_TIER),3)
-        COMPOSE_FILES += -f apps/email/dovecot/docker-compose.yml
+        COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/dovecot/docker-compose.yml)
     endif
     ifeq ($(EMAIL_TIER),4)
-        COMPOSE_FILES += -f apps/email/postfix-relay/docker-compose.yml
+        COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/dovecot/docker-compose.yml)
+        COMPOSE_FILES += $(call include_if,stacks/net_providers/mail_provider/postfix/relay/docker-compose.yml)
     endif
 endif
 
 # Observability
 ifeq ($(ENABLE_OBSERVABILITY),true)
-    COMPOSE_FILES += -f apps/observability/prometheus/docker-compose.yml
-    COMPOSE_FILES += -f apps/observability/grafana/docker-compose.yml
-    COMPOSE_FILES += -f apps/observability/loki/docker-compose.yml
-    COMPOSE_FILES += -f apps/observability/promtail/docker-compose.yml
-    COMPOSE_FILES += -f apps/observability/tempo/docker-compose.yml
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
 endif
 
-# Extensions – each tag adds its own compose file
+# Extensions – each tag adds its own compose file under extensions/<tag>/
 ifdef EXTENSION_TAGS
-    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += --profile tag-$(tag) -f extensions/$(tag)/docker-compose.yml))
+    $(foreach tag,$(EXTENSION_TAGS),$(eval COMPOSE_FILES += $(call include_if,extensions/$(tag)/docker-compose.yml)))
 endif
 
+# ---------------------------------------------------------------------------
 # Targets
-.PHONY: up down restart ps status logs clean bootstrap network-lab health switch-ca switch-cache
+# ---------------------------------------------------------------------------
+.PHONY: up down restart ps status logs clean bootstrap network-lab health \
+        switch-ca switch-cache switch-dns
 
 up:
-	docker compose up -d
 	docker compose $(COMPOSE_FILES) up -d
 
 down:
-	docker compose down
 	docker compose $(COMPOSE_FILES) down
 
-restart:
-	docker compose restart
 restart: down up
 
-ps:
-	docker compose ps
-status:
+ps status:
 	docker compose $(COMPOSE_FILES) ps
 
 logs:
-	docker compose logs -f
 	docker compose $(COMPOSE_FILES) logs -f
 
 clean: down
@@ -89,14 +102,16 @@ bootstrap:
 	./scripts/bootstrap.sh
 
 network-lab:
-	containerlab deploy -t core/containerlab/topology.clab.yml
-
+	containerlab deploy -t stacks/core/containerlab/topology.clab.yml
 
 health:
 	./scripts/healthcheck.py
 
 switch-ca:
-	./scripts/switch-ca.sh
+	./scripts/lib/switch-ca.sh $(filter-out $@,$(MAKECMDGOALS))
 
 switch-cache:
-	./scripts/switch-cache.sh
+	./scripts/lib/switch-cache $(filter-out $@,$(MAKECMDGOALS))
+
+switch-dns:
+	./scripts/lib/switch-dns.sh $(filter-out $@,$(MAKECMDGOALS))
