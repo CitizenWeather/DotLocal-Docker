@@ -1,0 +1,76 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, alpha]
+  pull_request:
+    branches: [main, alpha]
+  schedule:
+    # Weekly scan every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+
+jobs:
+  trivy-scan:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy on repository filesystem
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64.tar.gz | tar -xz
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Run gitleaks
+        run: gitleaks detect --source . --verbose --redact
+
+  misconfig-scan:
+    name: Dockerfile / Compose Misconfig Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy misconfig scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload misconfig results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-config.sarif

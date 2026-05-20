@@ -1,31 +1,40 @@
 version: '3.8'
 
 services:
-  powerdns:
-    image: powerdns/pdns-auth-mysql:4.8.0
-    container_name: netlocal_powerdns
-    depends_on:
-      - postgres
-    environment:
-      - PDNS_gmysql_host=postgres
-      - PDNS_gmysql_port=5432
-      - PDNS_gmysql_user=powerdns
-      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
-      - PDNS_gmysql_dbname=powerdns
-      - PDNS_api=yes
-      - PDNS_api_key=${POWERDNS_API_KEY}
-      - PDNS_webserver=yes
-      - PDNS_webserver_address=0.0.0.0
-      - PDNS_webserver_password=${POWERDNS_API_KEY}
-    networks:
-      localnet_backbone:
-        ipv4_address: 169.254.0.3
-      localnet_default:
+  traefik:
+    image: traefik:v3.0
+    container_name: netlocal_traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - registry_data:/var/lib/powerdns
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
-
-volumes:
-  registry_data:
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "netlocal.component=gateway"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

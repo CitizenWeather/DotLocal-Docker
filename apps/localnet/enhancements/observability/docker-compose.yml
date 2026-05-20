@@ -1,31 +1,114 @@
 version: '3.8'
 
+# Grafana + Loki + Promtail + Tempo — included when ENABLE_OBSERVABILITY=true
+# Prometheus is in the prometheus/ subdirectory (separate compose)
+
 services:
-  powerdns:
-    image: powerdns/pdns-auth-mysql:4.8.0
-    container_name: netlocal_powerdns
-    depends_on:
-      - postgres
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: netlocal_grafana
     environment:
-      - PDNS_gmysql_host=postgres
-      - PDNS_gmysql_port=5432
-      - PDNS_gmysql_user=powerdns
-      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
-      - PDNS_gmysql_dbname=powerdns
-      - PDNS_api=yes
-      - PDNS_api_key=${POWERDNS_API_KEY}
-      - PDNS_webserver=yes
-      - PDNS_webserver_address=0.0.0.0
-      - PDNS_webserver_password=${POWERDNS_API_KEY}
-    networks:
-      localnet_backbone:
-        ipv4_address: 169.254.0.3
-      localnet_default:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-netlocal}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=false
     volumes:
-      - registry_data:/var/lib/powerdns
+      - grafana_data:/var/lib/grafana
+      - ../../../../config/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "netlocal.component=observability"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: netlocal_loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki/config/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "netlocal.component=observability"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: netlocal_promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./promtail/config/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    labels:
+      - "netlocal.component=observability"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: netlocal_tempo
+    command: ["-config.file=/etc/tempo/tempo-config.yml"]
+    volumes:
+      - ./tempo/config/tempo-config.yml:/etc/tempo/tempo-config.yml:ro
+      - tempo_data:/tmp/tempo
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "netlocal.component=observability"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3200/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
-  registry_data:
+  grafana_data:
+  loki_data:
+  tempo_data:

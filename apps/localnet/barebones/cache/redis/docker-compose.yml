@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: netlocal_redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - cache_data:/data
+    networks:
+      - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "netlocal.component=cache"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  cache_data:

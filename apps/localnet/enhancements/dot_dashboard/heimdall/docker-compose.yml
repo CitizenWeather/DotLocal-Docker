@@ -11,9 +11,25 @@ services:
       - heimdall_data:/config
     networks:
       - localnet_default
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.heimdall.rule=Host(`dashboard.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80"
+      - "netlocal.component=dashboard"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   heimdall_data:
