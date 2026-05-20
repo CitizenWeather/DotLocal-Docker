@@ -1,31 +1,38 @@
 version: '3.8'
 
+# Core observability services included when ENABLE_OBSERVABILITY=true.
+# Grafana: dashboards and visualisation.
+# Promtail: log collector (ships container logs to the log backend).
+# Backend slots (LOG_APP, TRACE_APP) are assembled separately via Makefile.
+
 services:
-  powerdns:
-    image: powerdns/pdns-auth-mysql:4.8.0
-    container_name: netlocal_powerdns
-    depends_on:
-      - postgres
+  grafana:
+    image: grafana/grafana:latest
+    container_name: netlocal_grafana
     environment:
-      - PDNS_gmysql_host=postgres
-      - PDNS_gmysql_port=5432
-      - PDNS_gmysql_user=powerdns
-      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
-      - PDNS_gmysql_dbname=powerdns
-      - PDNS_api=yes
-      - PDNS_api_key=${POWERDNS_API_KEY}
-      - PDNS_webserver=yes
-      - PDNS_webserver_address=0.0.0.0
-      - PDNS_webserver_password=${POWERDNS_API_KEY}
-    networks:
-      localnet_backbone:
-        ipv4_address: 169.254.0.3
-      localnet_default:
+      GF_SERVER_ROOT_URL: "https://grafana.${NETLOCAL_ROOT_DOMAIN:-net.local}"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
     volumes:
-      - registry_data:/var/lib/powerdns
+      - grafana_data:/var/lib/grafana
+    networks:
+      - localnet_default
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "netlocal.component=observability"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: netlocal_promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./slots/promtail/config/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=observability"
+    restart: unless-stopped
 
 volumes:
-  registry_data:
+  grafana_data:

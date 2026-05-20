@@ -1,0 +1,39 @@
+{
+    # Use the local Step-CA for automatic TLS certificate issuance.
+    # The CA root must be trusted on the host for browser access.
+    acme_ca https://ca.{env.NETLOCAL_ROOT_DOMAIN}/acme/acme/directory
+
+    # Email for ACME registration (optional for local CA)
+    email admin@{env.NETLOCAL_ROOT_DOMAIN}
+}
+
+# Service routing — add one block per service.
+# Pattern: <subdomain>.{env.NETLOCAL_ROOT_DOMAIN} → reverse_proxy <container>:<port>
+#
+# Examples:
+#   dashboard.{env.NETLOCAL_ROOT_DOMAIN} {
+#       reverse_proxy netlocal_heimdall:80
+#   }
+#   minio.{env.NETLOCAL_ROOT_DOMAIN} {
+#       reverse_proxy netlocal_minio:9001
+#   }
+
+registrar.{env.NETLOCAL_ROOT_DOMAIN} {
+    reverse_proxy netlocal_powerdns:8081
+}
+
+status.{env.NETLOCAL_ROOT_DOMAIN} {
+    reverse_proxy netlocal_uptime_kuma:3001
+}
+
+dashboard.{env.NETLOCAL_ROOT_DOMAIN} {
+    reverse_proxy netlocal_heimdall:80
+}
+
+minio.{env.NETLOCAL_ROOT_DOMAIN} {
+    reverse_proxy netlocal_minio:9001
+}
+
+metrics.{env.NETLOCAL_ROOT_DOMAIN} {
+    reverse_proxy netlocal_prometheus:9090
+}

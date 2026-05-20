@@ -8,7 +8,7 @@ set -e
 SLOT=$1
 IMPL=$2
 
-SLOTS="dns ca registry gateway db cache storage messaging policy"
+SLOTS="dns ca registry gateway db cache storage messaging policy ntp dashboard uptime identity secrets log trace"
 
 if [ -z "$SLOT" ] || [ -z "$IMPL" ]; then
     echo "Usage: make switch SLOT=<slot> IMPL=<impl>"

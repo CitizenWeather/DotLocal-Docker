@@ -10,9 +10,20 @@
 
 An implementation must:
 - Serve as an authoritative nameserver for dynamic DNS records
-- Expose a REST API on port 8081 for record creation/deletion (used by `register-service.sh`)
-- Store records in the PostgreSQL instance (DB slot)
 - Accept queries from the DNS resolver at `169.254.0.2`
+- Store records in the PostgreSQL instance (DB slot)
+- Expose a REST API on port 8081 authenticated via `X-API-Key: ${POWERDNS_API_KEY}`
+
+### REST API surface used by `register-service.sh`
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/servers/localhost/zones` | List zones |
+| `POST` | `/api/v1/servers/localhost/zones` | Create a zone |
+| `PATCH` | `/api/v1/servers/localhost/zones/{zone}` | Add/update records |
+| `DELETE` | `/api/v1/servers/localhost/zones/{zone}/records/{name}/{type}` | Remove a record |
+
+All requests must include `X-API-Key: ${POWERDNS_API_KEY}` and `Content-Type: application/json`.
 
 ## Required environment variables
 

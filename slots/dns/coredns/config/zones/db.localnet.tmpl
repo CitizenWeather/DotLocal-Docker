@@ -1,0 +1,19 @@
+; Zone file template for the local domain.
+; Rendered at startup by the coredns-init container using envsubst.
+; Variable: NETLOCAL_ROOT_DOMAIN (set in .env)
+
+$ORIGIN ${NETLOCAL_ROOT_DOMAIN}.
+$TTL 300
+
+@   IN  SOA  ns1.${NETLOCAL_ROOT_DOMAIN}. hostmaster.${NETLOCAL_ROOT_DOMAIN}. (
+        2024010101  ; serial
+        3600        ; refresh
+        900         ; retry
+        86400       ; expire
+        300         ; minimum TTL
+    )
+
+@       IN  NS   ns1.${NETLOCAL_ROOT_DOMAIN}.
+ns1     IN  A    169.254.0.2
+ca      IN  A    169.254.0.4
+registry IN A    169.254.0.3

@@ -11,8 +11,8 @@ endef
 
 # ---------------------------------------------------------------------------
 # ROLE SLOTS — mandatory roles; exactly one implementation runs per slot.
-# Each *_DIR points to the slot's home under slots/<role>/; *_APP selects
-# the implementation subdirectory. Set *_APP in .env to switch.
+# Each *_DIR points to slots/<role>/; *_APP selects the implementation.
+# Set *_APP in .env to switch. Leave blank to skip (identity, secrets).
 # ---------------------------------------------------------------------------
 DNS_DIR       = slots/dns
 CA_DIR        = slots/ca
@@ -23,13 +23,18 @@ CACHE_DIR     = slots/cache
 STORAGE_DIR   = slots/storage
 MESSAGING_DIR = slots/messaging
 POLICY_DIR    = slots/policy
+NTP_DIR       = slots/ntp
+DASHBOARD_DIR = slots/dashboard
+UPTIME_DIR    = slots/uptime
+IDENTITY_DIR  = slots/identity
+SECRETS_DIR   = slots/secrets
 
 # ---------------------------------------------------------------------------
 # Compose file list
 # ---------------------------------------------------------------------------
 COMPOSE_FILES = $(COMPOSE_BASE)
 
-# Role slots — silently skipped if the implementation compose file is absent
+# Core role slots
 COMPOSE_FILES += $(call include_if,$(DNS_DIR)/$(DNS_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(CA_DIR)/$(CA_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(REGISTRY_DIR)/$(REGISTRY_APP)/docker-compose.yml)
@@ -40,16 +45,22 @@ COMPOSE_FILES += $(call include_if,$(STORAGE_DIR)/$(STORAGE_APP)/docker-compose.
 COMPOSE_FILES += $(call include_if,$(MESSAGING_DIR)/$(MESSAGING_APP)/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,$(POLICY_DIR)/$(POLICY_APP)/docker-compose.yml)
 
+# Infrastructure slots (swappable fixed services)
+COMPOSE_FILES += $(call include_if,$(NTP_DIR)/$(NTP_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(DASHBOARD_DIR)/$(DASHBOARD_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(UPTIME_DIR)/$(UPTIME_APP)/docker-compose.yml)
+
+# Optional architectural slots (blank by default — not required for basic stack)
+COMPOSE_FILES += $(call include_if,$(IDENTITY_DIR)/$(IDENTITY_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(SECRETS_DIR)/$(SECRETS_APP)/docker-compose.yml)
+
 # Fixed services — always included when their compose files exist
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/domain_registry/core/dnsmasq/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/heimdall/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_provider/base/health/endpoint/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,build/docker/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
 
 # ---------------------------------------------------------------------------
-# Email tier — additive/layered, not a slot (see docs/slots.md#email-tiers)
+# Email tiers (additive/layered — not a slot)
 # EMAIL_TIER=1: Mailpit only (dev trap)
 # EMAIL_TIER=2: Stalwart + SnappyMail webmail
 # EMAIL_TIER=3: tier 2 + Dovecot IMAP
@@ -69,12 +80,17 @@ else
 endif
 
 # ---------------------------------------------------------------------------
-# Observability — opt-in feature flag, not a slot
-# ENABLE_OBSERVABILITY=true starts Prometheus, Grafana, Loki, Promtail, Tempo
+# Observability — opt-in feature flag (ENABLE_OBSERVABILITY=true)
+# Grafana + Promtail are always included when enabled.
+# LOG_APP and TRACE_APP select the backend implementations.
 # ---------------------------------------------------------------------------
 ifeq ($(ENABLE_OBSERVABILITY),true)
-    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    LOG_DIR   = slots/log
+    TRACE_DIR = slots/trace
     COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,$(LOG_DIR)/$(LOG_APP)/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,$(TRACE_DIR)/$(TRACE_APP)/docker-compose.yml)
 endif
 
 # ---------------------------------------------------------------------------
@@ -92,6 +108,9 @@ endif
 .PHONY: up down restart ps status logs clean bootstrap network-lab health \
         validate-slots switch switch-ca switch-cache switch-dns
 
+# Validates that every non-blank *_APP variable resolves to an existing
+# compose file. Blank values (IDENTITY_APP, SECRETS_APP) are intentionally
+# skipped — they are optional slots.
 validate-slots:
 	@errors=0; \
 	for entry in \
@@ -103,9 +122,16 @@ validate-slots:
 	  "CACHE_APP:$(CACHE_DIR)/$(CACHE_APP)" \
 	  "STORAGE_APP:$(STORAGE_DIR)/$(STORAGE_APP)" \
 	  "MESSAGING_APP:$(MESSAGING_DIR)/$(MESSAGING_APP)" \
-	  "POLICY_APP:$(POLICY_DIR)/$(POLICY_APP)"; do \
+	  "POLICY_APP:$(POLICY_DIR)/$(POLICY_APP)" \
+	  "NTP_APP:$(NTP_DIR)/$(NTP_APP)" \
+	  "DASHBOARD_APP:$(DASHBOARD_DIR)/$(DASHBOARD_APP)" \
+	  "UPTIME_APP:$(UPTIME_DIR)/$(UPTIME_APP)" \
+	  "IDENTITY_APP:$(IDENTITY_DIR)/$(IDENTITY_APP)" \
+	  "SECRETS_APP:$(SECRETS_DIR)/$(SECRETS_APP)"; do \
 	  name=$$(echo "$$entry" | cut -d: -f1); \
+	  impl=$$(echo "$$entry" | cut -d: -f2 | rev | cut -d/ -f1 | rev); \
 	  path=$$(echo "$$entry" | cut -d: -f2)/docker-compose.yml; \
+	  if [ -z "$$impl" ]; then continue; fi; \
 	  if [ ! -f "$$path" ]; then \
 	    echo "  MISSING $$name → $$path" >&2; \
 	    errors=$$((errors+1)); \

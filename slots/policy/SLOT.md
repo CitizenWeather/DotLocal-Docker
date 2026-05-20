@@ -17,12 +17,23 @@ An implementation must:
 | `opa` | 8181 | HTTP REST (Rego policy evaluation) |
 | `iptables` | — | Host-level rules, no port |
 
+## OPA contract (REST policy evaluation)
+
+OPA receives a JSON input document and returns `{"result": true}` or `{"result": false}`:
+
+```
+POST /v1/data/<package>/<rule>
+Content-Type: application/json
+
+{"input": {"user": "alice", "action": "read", "resource": "/api/secrets"}}
+```
+
 ## Available implementations
 
 | Name | Image | Notes |
 |---|---|---|
 | `opa` *(recommended)* | `openpolicyagent/opa:latest` | REST API for Rego policy evaluation |
-| `iptables` | `alpine:latest` | Host iptables rules via NET_ADMIN capability |
+| `iptables` | `alpine:latest` | Host iptables rules; **requires `cap_add: NET_ADMIN`** |
 
 ## Adding a new implementation
 

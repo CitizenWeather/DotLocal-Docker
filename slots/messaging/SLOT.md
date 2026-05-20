@@ -9,13 +9,16 @@
 An implementation must:
 - Expose a client port reachable from services on `localnet_default`
 - Persist messages to a named volume when persistence is supported
+- Set container name `netlocal_<broker>` for predictable DNS resolution within the stack
 
 ## Port conventions
 
 | Implementation | Port | Protocol |
 |---|---|---|
 | `nats` / `nats-jetstream` | 4222 | NATS |
-| `kafka` | 9092 | Kafka |
+| `kafka` | 9092 | Kafka (Zookeeper on 2181 internally) |
+| `rabbitmq` | 5672 | AMQP; management UI on 15672 |
+| `redpanda` | 9092 | Kafka-compatible wire protocol |
 
 ## Available implementations
 
@@ -24,6 +27,8 @@ An implementation must:
 | `nats-jetstream` *(recommended)* | `nats:2.10-alpine` | JetStream persistence enabled |
 | `nats` | `nats:2.10-alpine` | Core NATS, no persistence |
 | `kafka` | `confluentinc/cp-kafka:latest` | Includes Zookeeper sidecar |
+| `rabbitmq` | `rabbitmq:3-management-alpine` | AMQP; compose file planned |
+| `redpanda` | `redpandadata/redpanda:latest` | Kafka-compatible, lighter; compose file planned |
 
 ## Adding a new implementation
 
