@@ -44,6 +44,8 @@ Switch with: `./scripts/lib/switch-ca.sh <impl>`
 **Backbone IP:** `169.254.0.3`  
 **Role:** Authoritative nameserver for dynamic records. Stores records in PostgreSQL and exposes a REST API for programmatic registration.
 
+> **Note:** Only one implementation exists today. `REGISTRY_APP` is effectively a fixed service until a second alternative is added.
+
 | Implementation | Image | Notes |
 |---|---|---|
 | `powerdns` *(only option)* | `powerdns/pdns-auth:latest` | PostgreSQL backend; HTTP API at port 8081 for `register-service.sh` |
@@ -128,6 +130,73 @@ Switch with: `./scripts/lib/switch-cache.sh <impl>`
 |---|---|---|---|
 | `opa` *(recommended)* | `openpolicyagent/opa:latest` | 8181 | Open Policy Agent; REST API for Rego policy evaluation |
 | `iptables` | `alpine:latest` | — | Host-level iptables rules applied via NET_ADMIN container |
+
+---
+
+---
+
+## Email tiers
+
+Email is configured differently from slots. Rather than selecting one of several mutually-exclusive implementations, `EMAIL_TIER` stacks services progressively:
+
+| Tier | Services started |
+|---|---|
+| `1` | Mailpit (dev trap only, no real delivery) |
+| `2` | Stalwart mail server + SnappyMail webmail |
+| `3` | tier 2 + Dovecot IMAP |
+| `4` | tier 3 + Postfix relay (enables real outbound delivery) |
+
+This is intentionally different from the slot model — each tier is a superset of the one below it.
+
+---
+
+## Slot dependencies
+
+Some slots depend on others being present and healthy. The gateway and DNS resolver cannot function until their dependencies are running.
+
+```
+db  ──────────────► registry ──► dns
+                                  │
+ca ────────────────────────────► gateway
+```
+
+| Slot | Depends on |
+|---|---|
+| `registry` | `db` (stores DNS records in PostgreSQL) |
+| `dns` | `registry` (forwards non-local queries to it) |
+| `gateway` | `ca` (obtains TLS certificates via ACME) |
+| `ca` | `dns` (CA hostname must resolve) |
+
+Docker's `depends_on` does not span multi-file compose assemblies. Start order matters: `db` and `ca` should be healthy before `registry`, `dns`, and `gateway` are started. `make up` brings everything up together; use `make health` to verify after startup.
+
+---
+
+## Switching slots
+
+To switch any slot:
+
+```bash
+make switch SLOT=<slot> IMPL=<impl>
+# e.g.:
+make switch SLOT=gateway IMPL=traefik
+make switch SLOT=messaging IMPL=kafka
+```
+
+Or edit `.env` directly and run `make restart`.
+
+The `make switch` command validates that the target compose file exists before making any changes.
+
+---
+
+## Adding a new slot implementation
+
+See `slots/<role>/SLOT.md` for the interface contract each implementation must satisfy (required ports, labels, environment variables, network attachment).
+
+1. Create `slots/<role>/<impl-name>/docker-compose.yml`
+2. Attach to the correct network(s) — see `SLOT.md` for the role
+3. Add `netlocal.component=<role>` label
+4. Set `<ROLE>_APP=<impl-name>` in `.env`
+5. Run `make validate-slots` to confirm the path resolves before `make up`
 
 ---
 
