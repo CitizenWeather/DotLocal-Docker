@@ -61,7 +61,7 @@ _add_if_exists "stacks/barebones/net_root/intranet_service_provider/base/health/
 _add_if_exists "build/layers/authority/net_time/slots/chrony/docker-compose.yml"
 _add_if_exists "stacks/net_web/whois/whoisd/docker-compose.yml"
 _add_if_exists "stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml"
-_add_if_exists "build/docker/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml"
+_add_if_exists "build/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml"
 
 # Email tiers (additive)
 case "${EMAIL_TIER:-1}" in
@@ -81,8 +81,8 @@ esac
 
 # Observability
 if [ "${ENABLE_OBSERVABILITY:-false}" = "true" ]; then
-    _add_if_exists "build/docker/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml"
-    _add_if_exists "build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml"
+    _add_if_exists "build/layers/architecture/supervisor/observability/docker-compose.yml"
+    _add_if_exists "build/layers/architecture/supervisor/observability/slots/prometheus/docker-compose.yml"
     _add_if_exists "slots/log/${LOG_APP}/docker-compose.yml"
     _add_if_exists "slots/trace/${TRACE_APP}/docker-compose.yml"
 fi
