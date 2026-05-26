@@ -2,7 +2,7 @@
 
 Each infrastructure role in NetLocal is a **slot** — a named position in the stack that can be filled by any of its listed implementations. You select an implementation by setting the corresponding variable in `.env`.
 
-The Makefile includes `apps/localnet/barebones/<slot>/<impl>/docker-compose.yml` for each slot, using the `include_app` helper that silently skips the file if it does not exist.
+The Makefile includes `slots/<slot>/<impl>/docker-compose.yml` for each slot, using the `include_if` helper that silently skips the file if it does not exist.
 
 ---
 
@@ -14,7 +14,7 @@ The Makefile includes `apps/localnet/barebones/<slot>/<impl>/docker-compose.yml`
 
 | Implementation | Image | Notes |
 |---|---|---|
-| `coredns` *(recommended)* | `coredns/coredns:1.11.1` | Zone file at `apps/localnet/barebones/dns/coredns/config/zones/`; Corefile configures forwarding to PowerDNS |
+| `coredns` *(recommended)* | `coredns/coredns:1.11.1` | Zone file at `slots/dns/coredns/config/zones/`; Corefile configures forwarding to PowerDNS |
 | `bind9` | `ubuntu/bind9:latest` | Named zones; heavier but battle-tested |
 | `knot` | `cznic/knot:latest` | High-performance authoritative DNS |
 

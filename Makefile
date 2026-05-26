@@ -66,7 +66,7 @@ COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_pr
 COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
 
 # ---------------------------------------------------------------------------
 # Email tiers (additive/layered — not a slot)
@@ -96,8 +96,8 @@ endif
 ifeq ($(ENABLE_OBSERVABILITY),true)
     LOG_DIR   = slots/log
     TRACE_DIR = slots/trace
-    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
-    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/slots/prometheus/docker-compose.yml)
     COMPOSE_FILES += $(call include_if,$(LOG_DIR)/$(LOG_APP)/docker-compose.yml)
     COMPOSE_FILES += $(call include_if,$(TRACE_DIR)/$(TRACE_APP)/docker-compose.yml)
 endif
@@ -118,12 +118,11 @@ endif
         validate-slots switch switch-ca switch-cache switch-dns \
         plan apply rollback apply-status apply-history
 
-# Validates that every non-blank *_APP variable resolves to an existing
-# compose file. Blank values (IDENTITY_APP, SECRETS_APP) are intentionally
-# skipped — they are optional slots.
-up:
+## up — validate slots then start the full stack in detached mode
+up: validate-slots
 	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) up -d
-validate-slots:
+
+## validate-slots — check every non-blank *_APP variable resolves to an existing compose file
 	@errors=0; \
 	for entry in \
 	  "DNS_APP:$(DNS_DIR)/$(DNS_APP)" \
@@ -156,44 +155,51 @@ validate-slots:
 	fi; \
 	echo "All configured slots have compose files."
 
-up: validate-slots
-	docker compose $(COMPOSE_FILES) up -d
-
+## down — stop and remove all stack containers
 down:
 	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down
 
+## restart — stop then start the full stack
 restart: down up
 
+## status — show running container status
 ps status:
 	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) ps
 
+## logs — follow logs for all services
 logs:
 	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) logs -f
 
+## clean — stop stack, remove volumes, and wipe volumes/ directory
 clean: down
 	docker compose --project-name $(NETLOCAL_PROJECT) $(COMPOSE_FILES) down -v
 	rm -rf volumes/*
 
+## bootstrap — create Docker networks and runtime directories (first-time setup)
 bootstrap:
 	./scripts/bootstrap.sh
 
+## network-lab — deploy the containerlab network topology (requires containerlab)
 network-lab:
 	containerlab deploy -t stacks/core/containerlab/topology.clab.yml
 
+## health — run scripts/healthcheck.py to verify TCP/UDP reachability of core services
 health:
 	./scripts/healthcheck.py
 
-# Generic slot switcher: make switch SLOT=<slot> IMPL=<impl>
+## switch — change a slot implementation: make switch SLOT=<slot> IMPL=<impl>
 switch:
 	@./scripts/lib/switch.sh $(SLOT) $(IMPL)
 
-# Convenience wrappers (delegate to the generic switch target)
+## switch-ca — shorthand for: make switch SLOT=ca IMPL=<impl>
 switch-ca:
 	@./scripts/lib/switch.sh ca $(filter-out $@,$(MAKECMDGOALS))
 
+## switch-cache — shorthand for: make switch SLOT=cache IMPL=<impl>
 switch-cache:
 	@./scripts/lib/switch.sh cache $(filter-out $@,$(MAKECMDGOALS))
 
+## switch-dns — shorthand for: make switch SLOT=dns IMPL=<impl>
 switch-dns:
 	@./scripts/lib/switch.sh dns $(filter-out $@,$(MAKECMDGOALS))
 
@@ -203,17 +209,23 @@ switch-dns:
 # tier-by-tier, with drain hooks and health gating, preserving named volumes.
 # `up`/`down`/`restart` above are left intact for backwards compatibility.
 # ---------------------------------------------------------------------------
+
+## plan — show what `apply` would change without making any changes
 plan:
 	@./scripts/dotlocal plan
 
+## apply — reconcile running stack to desired state, tier-by-tier with health gating
 apply:
 	@./scripts/dotlocal apply $(if $(AUTO_APPROVE),--auto-approve,)
 
+## rollback — restore previous snapshot; use SNAPSHOT=<timestamp> to pick a specific one
 rollback:
 	@./scripts/dotlocal rollback $(SNAPSHOT)
 
+## apply-status — show the result of the most recent apply
 apply-status:
 	@./scripts/dotlocal status
 
+## apply-history — list all past apply operations
 apply-history:
 	@./scripts/dotlocal history

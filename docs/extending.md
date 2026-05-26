@@ -11,13 +11,13 @@ To add an alternative implementation for an existing slot (e.g. a new DNS resolv
 ### 1. Create the compose file
 
 ```
-apps/localnet/barebones/<slot>/<impl-name>/docker-compose.yml
+slots/<slot>/<impl-name>/docker-compose.yml
 ```
 
 For example, to add `unbound` as a DNS resolver:
 
 ```
-apps/localnet/barebones/dns/unbound/docker-compose.yml
+slots/dns/unbound/docker-compose.yml
 ```
 
 ### 2. Follow the network attachment pattern
@@ -64,7 +64,7 @@ labels:
 
 ### 4. Verify the Makefile picks it up
 
-The Makefile uses a wildcard-based `include_app` helper. As long as your file is at `apps/localnet/barebones/<slot>/<impl>/docker-compose.yml` and the corresponding `*_APP` variable is set in `.env`, it will be included automatically. No Makefile edits required for existing slots.
+The Makefile uses a wildcard-based `include_if` helper. As long as your file is at `slots/<slot>/<impl>/docker-compose.yml` and the corresponding `*_APP` variable is set in `.env`, it will be included automatically. No Makefile edits required for existing slots.
 
 If you are adding a **new slot** (not just a new implementation of an existing one):
 
@@ -87,18 +87,14 @@ Extensions are standalone service packs activated by a profile tag. They do not 
 ### 1. Create the compose file
 
 ```
-apps/extensions/<tag>/docker-compose.yml
+extensions/tags/<tag>/docker-compose.yml
 ```
-
-Every service in the file must include `profiles: ["tag-<tag>"]`:
 
 ```yaml
 services:
   mytool:
     image: mytool:latest
     container_name: netlocal_mytool
-    profiles:
-      - tag-mytag
     networks:
       - localnet_default
 
@@ -121,7 +117,7 @@ Then restart:
 make restart
 ```
 
-The Makefile iterates `EXTENSION_TAGS` and adds `--profile tag-<tag> -f apps/extensions/<tag>/docker-compose.yml` for each tag automatically.
+The Makefile iterates `EXTENSION_TAGS` and adds `-f extensions/tags/<tag>/docker-compose.yml` for each tag automatically.
 
 ### 3. Document it
 
