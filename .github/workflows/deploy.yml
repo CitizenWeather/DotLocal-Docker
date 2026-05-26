@@ -1,4 +1,23 @@
-name: deploy.yml
+name: Deploy
+
+# This workflow is intentionally left as a placeholder.
+# NetLocal is a self-hosted stack; there is no shared deployment target.
+# Fork this workflow and configure it for your own environment if needed.
+#
+# Typical use: SSH into your server and run `make apply`.
+
 on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for manual deploy"
+        required: false
+        default: "Manual trigger"
 
 jobs:
+  placeholder:
+    name: Deploy placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "Configure this workflow for your deployment target."

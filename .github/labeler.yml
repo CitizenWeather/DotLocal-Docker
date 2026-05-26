@@ -1,0 +1,39 @@
+dns:
+  - stacks/barebones/net_root/intranet_service_provider/base/domain_registry/**
+  - build/layers/authority/**/*dns*/**
+
+gateway:
+  - stacks/barebones/net_root/intranet_service_provider/base/gateway/**
+
+ca:
+  - build/layers/authority/**/*ca*/**
+  - build/layers/authority/**/*pki*/**
+  - build/layers/authority/**/*vault*/**
+
+cache:
+  - stacks/net_providers/cache_provider/**
+
+database:
+  - stacks/net_providers/**/*db*/**
+  - stacks/net_providers/**/*postgres*/**
+
+messaging:
+  - build/layers/barebones/infrastructure/messages/**
+
+observability:
+  - build/layers/architecture/supervisor/observability/**
+
+extensions:
+  - extensions/**
+
+docs:
+  - "*.md"
+  - docs/**
+
+ci:
+  - .github/workflows/**
+  - .github/**
+
+scripts:
+  - scripts/**
+  - Makefile

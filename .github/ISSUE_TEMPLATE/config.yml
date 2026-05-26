@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Documentation
+    url: https://github.com/CitizenWeather/DotLocal-Docker/tree/main/docs
+    about: Read the docs before opening an issue — your question may already be answered.
+  - name: Discussions
+    url: https://github.com/CitizenWeather/DotLocal-Docker/discussions
+    about: For questions, ideas, and general help use Discussions rather than Issues.
