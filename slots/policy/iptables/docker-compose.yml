@@ -2,13 +2,25 @@ version: '3.8'
 
 services:
   iptables-policy:
+    # Uses alpine to install nftables + iptables at startup; rules.sh prefers nft when available.
     image: alpine:latest
-    container_name: netlocal_iptables_policy
-    # Applies rules once at startup then exits. Restart on failure only.
-    command: sh /etc/policy/rules.sh
+    container_name: netlocal_firewall
+    # One-shot: applies rules at startup then exits cleanly. Restarts only on failure.
+    command: >
+      sh -c "apk add --no-cache nftables iptables ip6tables --quiet &&
+             sh /etc/policy/rules.sh"
     cap_add:
       - NET_ADMIN
+      - NET_RAW
     network_mode: host
+    environment:
+      NETLOCAL_SUBNET_BACKBONE: ${NETLOCAL_SUBNET_BACKBONE:-169.254.0.0/16}
+      NETLOCAL_SUBNET_DEFAULT:  ${NETLOCAL_SUBNET_DEFAULT:-172.20.0.0/16}
+      NETLOCAL_SUBNET_NAT:      ${NETLOCAL_SUBNET_NAT:-10.20.0.0/16}
+      # Space-separated TCP ports to allow inbound on the host. Override in .env.
+      FIREWALL_ALLOW_TCP: ${FIREWALL_ALLOW_TCP:-22 53 80 443}
+      # Space-separated UDP ports to allow inbound on the host. Override in .env.
+      FIREWALL_ALLOW_UDP: ${FIREWALL_ALLOW_UDP:-53 67 68 123}
     volumes:
       - ./config/rules.sh:/etc/policy/rules.sh:ro
     labels:
