@@ -8,3 +8,14 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+    # Scan all directories that contain compose files.
+    # Dependabot picks up image references from docker-compose.yml files it finds.
+    open-pull-requests-limit: 10
