@@ -3,19 +3,18 @@ title = "DotLocal-Docker gitleaks config"
 [allowlist]
 description = "Allowlist for known placeholder and example values"
 
-# Ignore placeholder credential values used in .env.example and docker-compose defaults.
-# These are intentionally not real secrets.
+# Placeholder credential values used intentionally in .env.example and compose defaults.
 regexes = [
-  "changeme",
-  "change_me",
-  "your[_-]?password",
-  "your[_-]?secret",
-  "your[_-]?api[_-]?key",
+  '''changeme''',
+  '''change_me''',
+  '''your[_-]?password''',
+  '''your[_-]?secret''',
+  '''your[_-]?api[_-]?key''',
 ]
 
+# gitleaks path patterns are regexes, not globs.
 paths = [
-  ".env.example",
-  ".env.example.*",
-  "docs/",
-  "SETUP.md",
+  '''\.env\.example''',
+  '''docs/''',
+  '''SETUP\.md''',
 ]
