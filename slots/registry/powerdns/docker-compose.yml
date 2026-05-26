@@ -48,3 +48,4 @@ services:
       - "caddy=${NETLOCAL_ROOT_DOMAIN:-net.local}"
       - "caddy.reverse_proxy=registrar.{{upstreams 8081}}"
     restart: unless-stopped
+    stop_grace_period: 30s

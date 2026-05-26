@@ -9,6 +9,7 @@ services:
       - localnet_default
     labels:
       - "netlocal.component=mail-relay"
+    stop_grace_period: 30s
 
 networks:
   localnet_default:

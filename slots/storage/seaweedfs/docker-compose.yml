@@ -54,6 +54,7 @@ services:
     labels:
       - "netlocal.component=storage"
     restart: unless-stopped
+    stop_grace_period: 30s
 
 volumes:
   seaweedfs_master:

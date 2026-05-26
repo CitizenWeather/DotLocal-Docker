@@ -11,6 +11,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.redis-insight.rule=Host(`redis.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
       - "traefik.http.services.redis-insight.loadbalancer.server.port=8001"
+    stop_grace_period: 30s
 
 volumes:
   redis_data:

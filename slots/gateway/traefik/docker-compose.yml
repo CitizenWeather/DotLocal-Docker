@@ -28,6 +28,7 @@ services:
       timeout: 3s
       retries: 4
       start_period: 5s
+    stop_grace_period: 30s
 
 volumes:
   traefik_data:

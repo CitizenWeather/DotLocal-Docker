@@ -22,6 +22,7 @@ services:
       - localnet_default
     labels:
       - "netlocal.component=gateway"
+    stop_grace_period: 30s
 
 volumes:
   traefik_acme:

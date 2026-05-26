@@ -12,6 +12,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.mailpit.rule=Host(`mail.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
       - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
+    stop_grace_period: 30s
 
 networks:
   localnet_default:

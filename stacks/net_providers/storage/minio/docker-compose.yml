@@ -17,6 +17,7 @@ services:
       - "traefik.http.services.minio.loadbalancer.server.port=9000"
       - "traefik.http.routers.minio-console.rule=Host(`minio.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+    stop_grace_period: 30s
 
 volumes:
   minio_data:

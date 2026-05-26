@@ -31,6 +31,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   registry_data:
@@ -73,4 +74,4 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
     volumes:
       - grafana_data:/var/lib/grafana
-    networks:
+    networks:    stop_grace_period: 30s

@@ -31,6 +31,7 @@ services:
       - "netlocal.component=messaging"
       - "traefik.enable=true"
       - "traefik.http.routers.redpanda.rule=Host(`redpanda.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   messaging_data:

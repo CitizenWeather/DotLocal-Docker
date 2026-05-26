@@ -13,6 +13,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.toxiproxy.rule=Host(`chaos.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
       - "traefik.http.services.toxiproxy.loadbalancer.server.port=8474"
+    stop_grace_period: 30s
 
 networks:
   localnet_default:

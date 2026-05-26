@@ -14,6 +14,7 @@ services:
       - "netlocal.component=dashboard"
       - "traefik.enable=true"
       - "traefik.http.routers.heimdall.rule=Host(`home.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   heimdall_data:

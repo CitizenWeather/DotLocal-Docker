@@ -11,6 +11,7 @@ services:
       - "netlocal.component=observability"
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=Host(`metrics.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   prometheus_data:

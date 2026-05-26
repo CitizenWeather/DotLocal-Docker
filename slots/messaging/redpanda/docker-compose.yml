@@ -41,6 +41,7 @@ services:
     labels:
       - "netlocal.component=messaging"
     restart: unless-stopped
+    stop_grace_period: 30s
 
 volumes:
   messaging_data:

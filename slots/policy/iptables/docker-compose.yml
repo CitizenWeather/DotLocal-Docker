@@ -14,3 +14,4 @@ services:
     labels:
       - "netlocal.component=policy"
     restart: on-failure
+    stop_grace_period: 30s
