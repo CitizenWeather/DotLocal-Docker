@@ -66,7 +66,7 @@ COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/intranet_service_pr
 COMPOSE_FILES += $(call include_if,build/layers/authority/net_time/slots/chrony/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/net_web/whois/whoisd/docker-compose.yml)
 COMPOSE_FILES += $(call include_if,stacks/barebones/net_root/localnet_authority/dashboards/dotlocal/status/uptime-kuma/docker-compose.yml)
-COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,build/layers/architecture/internet_services_provider/gateways/nat_egress/docker-compose.yml)
 
 # ---------------------------------------------------------------------------
 # Email tiers (additive/layered — not a slot)
@@ -96,8 +96,8 @@ endif
 ifeq ($(ENABLE_OBSERVABILITY),true)
     LOG_DIR   = slots/log
     TRACE_DIR = slots/trace
-    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/docker-compose.yml)
-    COMPOSE_FILES += $(call include_if,build/docker/layers/architecture/.supervisor/maintenance/observability/slots/prometheus/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/docker-compose.yml)
+    COMPOSE_FILES += $(call include_if,build/layers/architecture/supervisor/observability/slots/prometheus/docker-compose.yml)
     COMPOSE_FILES += $(call include_if,$(LOG_DIR)/$(LOG_APP)/docker-compose.yml)
     COMPOSE_FILES += $(call include_if,$(TRACE_DIR)/$(TRACE_APP)/docker-compose.yml)
 endif
