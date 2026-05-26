@@ -20,7 +20,7 @@ NetLocal uses a tiered email model. Set `EMAIL_TIER` in `.env` to choose how muc
 The simplest setup. Mailpit intercepts all outbound SMTP and presents a web UI showing every captured message. Nothing is actually delivered.
 
 - **Services:** `mailpit`
-- **Web UI:** `http://mail.net.local`
+- **Web UI:** `http://mail.localnet`
 - **SMTP port:** 1025 (inside the network)
 - **Use when:** You're developing locally and want to inspect outbound email without a real mail server.
 
@@ -31,8 +31,8 @@ The simplest setup. Mailpit intercepts all outbound SMTP and presents a web UI s
 A complete, production-capable mail server with a modern webmail interface.
 
 - **Services:** `stalwart` (SMTP + IMAP + JMAP), `snappymail` (webmail)
-- **Stalwart admin:** `https://mail.net.local/admin`
-- **Webmail:** `https://mail.net.local`
+- **Stalwart admin:** `https://mail.localnet/admin`
+- **Webmail:** `https://mail.localnet`
 - **Ports:** 25 (SMTP), 465 (SMTPS), 143 (IMAP), 993 (IMAPS), 4190 (ManageSieve)
 - **Use when:** You want a full local mail server with webmail, but don't need to receive IMAP from external mail clients.
 

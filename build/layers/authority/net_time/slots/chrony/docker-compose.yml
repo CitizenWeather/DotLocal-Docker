@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   chrony:
     image: cturra/ntp:latest
@@ -7,4 +5,14 @@ services:
     environment:
       - NTP_SERVERS=time.cloudflare.com,pool.ntp.org
     networks:
-      - localnet_default
+      localnet_backbone:
+        ipv4_address: 169.254.0.5
+      localnet_default:
+    labels:
+      - "netlocal.component=ntp"
+
+networks:
+  localnet_backbone:
+    external: true
+  localnet_default:
+    external: true

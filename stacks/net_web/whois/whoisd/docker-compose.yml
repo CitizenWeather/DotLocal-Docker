@@ -1,12 +1,14 @@
-version: '3.8'
-
 services:
   whoisd:
-    image: alpine:latest
+    image: likexian/whois-server:latest
     container_name: netlocal_whoisd
-    command: /bin/sh -c "apk add whois whoisd && echo 'domain: *.${NETLOCAL_ROOT_DOMAIN:-net.local}\norganisation: NetLocal\n' > /tmp/whois.db && whoisd -d /tmp/whois.db -p 43 -f"
+    environment:
+      - WHOIS_DOMAIN=${NETLOCAL_ROOT_DOMAIN:-net.local}
     networks:
       - localnet_default
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whois.rule=Host(`whois.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "netlocal.component=whois"
+
+networks:
+  localnet_default:
+    external: true

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "development/**", "claude/**"]
+  pull_request:
+
+jobs:
+  unit:
+    name: Plan engine unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run unit tests
+        run: python -m pytest tests/ -v
+
+  shell:
+    name: Shellcheck drain hooks and CLI shim
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint
+        run: |
+          shellcheck \
+            scripts/dotlocal \
+            scripts/dotlocal_lib/compose_files.sh \
+            scripts/lib/drain/*.sh
+
+  validate-slots:
+    name: Validate slot wiring
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed .env from .env.example
+        run: cp .env.example .env
+      - name: Validate every configured slot resolves to a compose file
+        run: make validate-slots

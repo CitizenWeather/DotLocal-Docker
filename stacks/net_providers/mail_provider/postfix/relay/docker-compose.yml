@@ -1,17 +1,15 @@
-version: '3.8'
-
 services:
-  relay:
-    image: ghcr.io/mailu/postfix:latest
-    container_name: netlocal_postfix_relay
+  postfix:
+    image: boky/postfix:latest
+    container_name: netlocal_postfix
     environment:
-      - RELAYHOST=[smtp.gmail.com]:587
-      - RELAYHOST_USERNAME=${EXTERNAL_SMTP_USER}
-      - RELAYHOST_PASSWORD=${EXTERNAL_SMTP_PASS}
+      - RELAYHOST=${SMTP_RELAYHOST:-}
+      - ALLOWED_SENDER_DOMAINS=${NETLOCAL_ROOT_DOMAIN:-net.local}
     networks:
       - localnet_default
-    restart: unless-stopped
-    depends_on:
-      - stalwart
     labels:
-      - "netlocal.component=email-relay"
+      - "netlocal.component=mail-relay"
+
+networks:
+  localnet_default:
+    external: true

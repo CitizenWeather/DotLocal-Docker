@@ -1,0 +1,14 @@
+build-profile:
+  name: "hypernet"
+  desc: ""
+  version: "v0.0.1a"
+  metadata:
+    ext-type: asa-service
+
+
+  instructions:
+    variations:
+      - Full
+      - Solo
+      - Simple
+      - Swarm

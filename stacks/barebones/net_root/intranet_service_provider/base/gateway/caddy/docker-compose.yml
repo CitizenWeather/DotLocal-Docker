@@ -1,19 +1,23 @@
-version: '3.8'
-
 services:
   caddy:
-    image: caddy:latest
+    image: caddy:2-alpine
     container_name: netlocal_caddy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
-      - gateway_data:/data
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - localnet_default
     labels:
       - "netlocal.component=gateway"
 
 volumes:
-  gateway_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  localnet_default:
+    external: true

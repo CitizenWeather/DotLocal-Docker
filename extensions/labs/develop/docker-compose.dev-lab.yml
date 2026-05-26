@@ -1,0 +1,7 @@
+# Developer lab bundle — use this to start all dev lab services together.
+# Individual services can also be started standalone from solutions/<name>/docker-compose.yml
+
+include:
+  - path: solutions/n8n/docker-compose.yml
+  - path: solutions/plantuml/docker-compose.yml
+  - path: solutions/mkdocs/docker-compose.yml

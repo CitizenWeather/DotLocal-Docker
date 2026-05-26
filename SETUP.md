@@ -80,17 +80,17 @@ The health check script tests TCP/UDP reachability for every core service. All i
 
 ## Host DNS configuration
 
-For your host machine to resolve `*.net.local` names, point your system resolver at the dnsmasq forwarder container (which listens on the Docker host at port 53).
+For your host machine to resolve `*.<NETLOCAL_ROOT_DOMAIN>` names (default `.localnet`), point your system resolver at the dnsmasq forwarder container (which listens on the Docker host at port 53).
 
 ### Linux (systemd-resolved)
 
 ```bash
-# Create a drop-in for the net.local domain
+# Create a drop-in for the localnet domain
 sudo mkdir -p /etc/systemd/resolved.conf.d
 cat <<EOF | sudo tee /etc/systemd/resolved.conf.d/netlocal.conf
 [Resolve]
 DNS=127.0.0.1
-Domains=~net.local
+Domains=~.localnet
 EOF
 sudo systemctl restart systemd-resolved
 ```
@@ -100,14 +100,14 @@ sudo systemctl restart systemd-resolved
 Add to the top of `/etc/resolv.conf`:
 ```
 nameserver 127.0.0.1
-search net.local
+search .localnet
 ```
 
 ### macOS
 
 ```bash
 sudo mkdir -p /etc/resolver
-echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/net.local
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/.localnet
 ```
 
 > Note: Link-local address ranges (169.254.x.x) may require additional routing on macOS and Windows. Prefer running NetLocal on a native Linux host.

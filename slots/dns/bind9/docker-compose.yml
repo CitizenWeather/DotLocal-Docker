@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  bind9:
+    image: ubuntu/bind9:latest
+    container_name: netlocal_bind9
+    environment:
+      BIND9_USER: "root"
+      TZ: "UTC"
+    volumes:
+      - ./config/named.conf:/etc/bind/named.conf:ro
+      - ./config/zones:/etc/bind/zones:ro
+      - bind9_cache:/var/cache/bind
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.2
+    labels:
+      - "netlocal.component=dns"
+    restart: unless-stopped
+
+volumes:
+  bind9_cache:

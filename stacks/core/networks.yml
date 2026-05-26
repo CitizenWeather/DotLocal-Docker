@@ -1,0 +1,12 @@
+version: '3.8'
+
+networks:
+  localnet_backbone:
+    external: true
+    name: "${NETLOCAL_NETWORK_PREFIX}localnet_backbone"
+  localnet_default:
+    external: true
+    name: "${NETLOCAL_NETWORK_PREFIX}localnet_default"
+  localnet_nat:
+    external: true
+    name: "${NETLOCAL_NETWORK_PREFIX}localnet_nat"

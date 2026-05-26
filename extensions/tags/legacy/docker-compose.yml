@@ -1,0 +1,23 @@
+# Legacy protocol support extension tag
+# Activates when EXTENSION_TAGS includes 'legacy'
+# Includes: FTP server, Telnet gateway, legacy protocol bridges
+
+services:
+  ftpd:
+    image: stilliard/pure-ftpd:latest
+    container_name: netlocal_ftpd
+    environment:
+      - PUBLICHOST=ftp.${NETLOCAL_ROOT_DOMAIN:-net.local}
+    volumes:
+      - ftp_data:/home/ftpusers
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=legacy"
+
+volumes:
+  ftp_data:
+
+networks:
+  localnet_default:
+    external: true

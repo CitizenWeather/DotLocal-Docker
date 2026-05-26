@@ -15,19 +15,19 @@ make health                 # verify all services are reachable
 
 ## Default service endpoints
 
-Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default `net.local`):
+Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default `.localnet`):
 
 | Service | URL | Notes |
 |---|---|---|
-| Dashboard | `http://dashboard.net.local` | Heimdall service portal |
-| Gateway | `https://*.net.local` | Caddy / Traefik reverse proxy |
-| CA | `https://ca.net.local` | Step-CA ACME endpoint |
-| Registry | `http://registrar.net.local:8081` | PowerDNS API |
-| Object storage | `http://minio.net.local:9000` | MinIO S3 API |
-| Storage console | `http://minio.net.local:9001` | MinIO web UI |
-| Status page | `http://status.net.local` | Uptime Kuma |
-| Mail (tier 1) | `http://mail.net.local` | Mailpit dev trap |
-| Grafana | `http://grafana.net.local` | When observability enabled |
+| Dashboard | `http://dashboard.localnet` | Heimdall service portal |
+| Gateway | `https://*.localnet` | Caddy / Traefik reverse proxy |
+| CA | `https://ca.localnet` | Step-CA ACME endpoint |
+| Registry | `http://registrar.localnet:8081` | PowerDNS API |
+| Object storage | `http://minio.localnet:9000` | MinIO S3 API |
+| Storage console | `http://minio.localnet:9001` | MinIO web UI |
+| Status page | `http://status.localnet` | Uptime Kuma |
+| Mail (tier 1) | `http://mail.localnet` | Mailpit dev trap |
+| Grafana | `http://grafana.localnet` | When observability enabled |
 
 ## Commands
 
@@ -44,6 +44,25 @@ Once running, services are available at `<name>.<NETLOCAL_ROOT_DOMAIN>` (default
 | `make network-lab` | Deploy containerlab network topology |
 | `make switch-ca` | Switch certificate authority implementation |
 | `make switch-cache` | Switch cache implementation |
+| `make plan` | Show what `apply` would do (zero-downtime diff vs running stack) |
+| `make apply` | Reconcile running stack to desired state — tier-by-tier, drain + health-gated, with snapshot + rollback |
+| `make rollback` | Roll back to the previous snapshot (or `make rollback SNAPSHOT=<timestamp>`) |
+| `make apply-status` | Show the most recent apply result |
+| `make apply-history` | List past applies |
+
+## Zero-downtime upgrades
+
+When you change `.env`, bump an image tag, or swap a slot, run `make plan` to see
+the diff (Terraform-style), then `make apply` to roll it out. The apply pipeline
+reconciles the stack tier-by-tier (backbone → data → identity → gateway → apps →
+observability), invokes per-service drain hooks for stateful services (postgres,
+redis, rabbitmq, minio), gates each tier on container health, and snapshots the
+prior state under `volumes/_apply/<timestamp>/` so `make rollback` can restore it.
+
+Slot switches (`./scripts/lib/switch.sh`, `make switch-cache`, etc.) automatically
+route through `dotlocal apply`, so you no longer lose every TCP connection on a
+slot swap. Set `SWITCH_LEGACY=1` to fall back to the old `make down && make up`
+behaviour.
 
 ## Documentation
 

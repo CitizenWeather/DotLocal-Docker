@@ -43,7 +43,7 @@ NetLocal uses two isolated Docker bridge networks and a Makefile that assembles 
 ```
 Host machine resolver
   └─ dnsmasq forwarder (always on, port 53 on Docker host)
-       ├─ *.net.local  →  CoreDNS (169.254.0.2)
+       ├─ *.<NETLOCAL_ROOT_DOMAIN>  →  CoreDNS (169.254.0.2)
        │     ├─ Static zone records  (ca, registrar, ns1)
        │     └─ All other .local queries  →  PowerDNS (169.254.0.3)
        │              └─ Dynamic records stored in PostgreSQL
@@ -58,13 +58,13 @@ New services are added to the DNS registry via the PowerDNS HTTP API. The helper
 
 ```
 Gateway (Caddy or Traefik)
-  └─ Requests certificate for *.net.local via ACME
-       └─ Step-CA ACME endpoint: https://ca.net.local/acme/acme/directory
+  └─ Requests certificate for *.localnet via ACME
+       └─ Step-CA ACME endpoint: https://ca.localnet/acme/acme/directory
               └─ Issues cert signed by the NetLocal Root CA
                      └─ Root CA cert must be trusted on client machines
 ```
 
-Caddy and Traefik both support automatic ACME certificate issuance. Caddy's `Caddyfile` sets `local_ca` to the Step-CA ACME URL; Traefik uses a `certificatesResolvers` block in its static config. After first boot, all `*.net.local` subdomains served through the gateway get valid TLS automatically.
+Caddy and Traefik both support automatic ACME certificate issuance. Caddy's `Caddyfile` sets `local_ca` to the Step-CA ACME URL; Traefik uses a `certificatesResolvers` block in its static config. After first boot, all `*.localnet` subdomains served through the gateway get valid TLS automatically.
 
 ---
 
@@ -73,17 +73,18 @@ Caddy and Traefik both support automatic ACME certificate issuance. Caddy's `Cad
 The Makefile reads `.env` on startup (via `include .env; export`) and builds a single `docker compose` command by conditionally appending `-f <path>` flags:
 
 ```makefile
-COMPOSE_BASE = -f core/networks.yml
+COMPOSE_BASE = -f stacks/core/networks.yml
 
-define include_app
-$(if $(wildcard apps/$(1)/$(2)/docker-compose.yml),\
-  -f apps/$(1)/$(2)/docker-compose.yml)
+define include_if
+$(if $(wildcard $(1)),-f $(1))
 endef
 
+DNS_DIR     = slots/dns
+GATEWAY_DIR = slots/gateway
+
 COMPOSE_FILES  = $(COMPOSE_BASE)
-COMPOSE_FILES += $(call include_app,dns,$(DNS_APP))
-COMPOSE_FILES += $(call include_app,ca,$(CA_APP))
-COMPOSE_FILES += $(call include_app,gateway,$(GATEWAY_APP))
+COMPOSE_FILES += $(call include_if,$(DNS_DIR)/$(DNS_APP)/docker-compose.yml)
+COMPOSE_FILES += $(call include_if,$(GATEWAY_DIR)/$(GATEWAY_APP)/docker-compose.yml)
 # ... and so on for each swappable slot
 ```
 
@@ -111,7 +112,7 @@ Gateway routing labels follow Traefik's convention (used even with Caddy for con
 ```yaml
 labels:
   - traefik.enable=true
-  - traefik.http.routers.minio.rule=Host(`minio.net.local`)
+  - traefik.http.routers.minio.rule=Host(`minio.localnet`)
   - traefik.http.services.minio.loadbalancer.server.port=9000
 ```
 
@@ -120,27 +121,34 @@ labels:
 ## Directory layout
 
 ```
-core/                     Network definitions, containerlab topology, FRR config
-apps/
-  localnet/
-    barebones/            Swappable implementations for each infrastructure role
-      dns/                coredns/ | bind9/ | knot/
-      ca/                 smallstep/ | openxpki/ | vault-pki/
-      registry/           powerdns/
-      gateway/            caddy/ | traefik/
-      database/           postgres/ | mysql/
-      cache/              redis/ | redis-stack/
-      storage/            minio/ | seaweedfs/
-      messages/           nats/ | nats-jetstream/ | kafka/
-      policy/             opa/ | iptables/
-      fabric/             default-router/ | squid/
-      health/             endpoint/
-      ntp/                chrony/
-  extensions/             Tag-activated optional packs
-    chaos/                ToxiProxy + Pumba
-    iot/                  Mosquitto + ChirpStack
-    legacy/               Gemini, Gopher
-config/                   Static service configs (Grafana, Prometheus, Squid)
-scripts/                  bootstrap.sh, healthcheck.py, lib/ helpers
-deployed/                 Rendered compose output (reference only)
+stacks/
+  core/                   External Docker network declarations, containerlab topology
+  barebones/              Fixed always-on services (dnsmasq, Heimdall, health endpoint)
+  net_providers/          Email stack by tier (Mailpit, Stalwart, Dovecot, Postfix)
+  net_web/                Web services (whoisd)
+slots/                    Swappable implementations — one directory per role
+  dns/                    coredns/ | bind9/ | knot/
+  ca/                     smallstep/
+  registry/               powerdns/
+  gateway/                caddy/ | traefik/
+  db/                     postgres/ | mysql/
+  cache/                  redis/ | redis-stack/
+  storage/                minio/ | seaweedfs/
+  messaging/              nats/ | kafka/ | rabbitmq/ | redpanda/
+  policy/                 opa/ | iptables/
+  ntp/                    chrony/
+  dashboard/              heimdall/ | homer/ | dashy/
+  uptime/                 uptime-kuma/ | gatus/ | statping/
+  identity/               (empty — Keycloak/Authentik planned)
+  secrets/                (empty — Vault/Infisical planned)
+  log/                    loki/
+  trace/                  tempo/
+build/
+  layers/                 Architectural layer compose files (observability, authority, etc.)
+extensions/
+  tags/                   Tag-activated optional packs (chaos, iot, labs, legacy)
+  as-a-service/           Standalone cloud emulator stacks (Supabase, LocalStack)
+  labs/                   Lab environments (developer, data, security)
+config/                   Runtime config overrides; config/generated/ is git-ignored
+scripts/                  bootstrap.sh, healthcheck.py, lib/ helpers, dotlocal_lib/ Python core
 ```

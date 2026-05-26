@@ -1,0 +1,23 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: netlocal_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=netlocal
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-changeme}
+    volumes:
+      - messaging_data:/var/lib/rabbitmq
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=messaging"
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+
+volumes:
+  messaging_data:
+
+networks:
+  localnet_default:
+    external: true

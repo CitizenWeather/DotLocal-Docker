@@ -1,31 +1,31 @@
-version: '3.8'
-
 services:
-  powerdns:
-    image: powerdns/pdns-auth-mysql:4.8.0
-    container_name: netlocal_powerdns
-    depends_on:
-      - postgres
-    environment:
-      - PDNS_gmysql_host=postgres
-      - PDNS_gmysql_port=5432
-      - PDNS_gmysql_user=powerdns
-      - PDNS_gmysql_password=${POSTGRES_PASSWORD}
-      - PDNS_gmysql_dbname=powerdns
-      - PDNS_api=yes
-      - PDNS_api_key=${POWERDNS_API_KEY}
-      - PDNS_webserver=yes
-      - PDNS_webserver_address=0.0.0.0
-      - PDNS_webserver_password=${POWERDNS_API_KEY}
-    networks:
-      localnet_backbone:
-        ipv4_address: 169.254.0.3
-      localnet_default:
+  traefik:
+    image: traefik:v3
+    container_name: netlocal_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.netlocal.acme.caserver=https://ca.${NETLOCAL_ROOT_DOMAIN:-net.local}/acme/acme/directory"
+      - "--certificatesresolvers.netlocal.acme.storage=/acme/acme.json"
+      - "--certificatesresolvers.netlocal.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
     volumes:
-      - registry_data:/var/lib/powerdns
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/acme
+    networks:
+      - localnet_default
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.powerdns.rule=Host(`registrar.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "netlocal.component=gateway"
 
 volumes:
-  registry_data:
+  traefik_acme:
+
+networks:
+  localnet_default:
+    external: true

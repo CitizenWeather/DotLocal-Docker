@@ -1,0 +1,26 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: netlocal_minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=storage"
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`s3.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-console.rule=Host(`minio.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+
+volumes:
+  minio_data:
+
+networks:
+  localnet_default:
+    external: true

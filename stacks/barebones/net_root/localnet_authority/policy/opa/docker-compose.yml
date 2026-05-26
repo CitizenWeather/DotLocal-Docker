@@ -1,14 +1,15 @@
-version: '3.8'
-
 services:
   opa:
     image: openpolicyagent/opa:latest
     container_name: netlocal_opa
     command: run --server --addr=0.0.0.0:8181
     volumes:
-      - ./config/policy.rego:/policy/policy.rego:ro
+      - ./policies:/policies:ro
     networks:
       - localnet_default
     labels:
       - "netlocal.component=policy"
-      - "netlocal.layer=authorities"
+
+networks:
+  localnet_default:
+    external: true

@@ -1,19 +1,23 @@
-version: '3.8'
-
 services:
   heimdall:
-    image: linuxserver/heimdall:2.5.9
+    image: linuxserver/heimdall:latest
     container_name: netlocal_heimdall
     environment:
       - PUID=1000
       - PGID=1000
+      - TZ=UTC
     volumes:
       - heimdall_data:/config
     networks:
       - localnet_default
     labels:
+      - "netlocal.component=dashboard"
       - "traefik.enable=true"
-      - "traefik.http.routers.heimdall.rule=Host(`dashboard.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.routers.heimdall.rule=Host(`home.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
 
 volumes:
   heimdall_data:
+
+networks:
+  localnet_default:
+    external: true
