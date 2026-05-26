@@ -1,0 +1,32 @@
+services:
+  traefik:
+    image: traefik:v3
+    container_name: netlocal_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.netlocal.acme.caserver=https://ca.${NETLOCAL_ROOT_DOMAIN:-net.local}/acme/acme/directory"
+      - "--certificatesresolvers.netlocal.acme.storage=/acme/acme.json"
+      - "--certificatesresolvers.netlocal.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/acme
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=gateway"
+    stop_grace_period: 30s
+
+volumes:
+  traefik_acme:
+
+networks:
+  localnet_default:
+    external: true

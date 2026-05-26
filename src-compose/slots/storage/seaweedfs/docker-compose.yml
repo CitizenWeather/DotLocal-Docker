@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  seaweedfs-master:
+    image: chrislusf/seaweedfs:latest
+    container_name: netlocal_seaweedfs_master
+    command: master -ip=netlocal_seaweedfs_master
+    volumes:
+      - seaweedfs_master:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=storage"
+    restart: unless-stopped
+
+  seaweedfs-volume:
+    image: chrislusf/seaweedfs:latest
+    container_name: netlocal_seaweedfs_volume
+    command: volume -mserver=netlocal_seaweedfs_master:9333 -dir=/data -ip=netlocal_seaweedfs_volume
+    depends_on:
+      - seaweedfs-master
+    volumes:
+      - seaweedfs_volume:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=storage"
+    restart: unless-stopped
+
+  seaweedfs-s3:
+    image: chrislusf/seaweedfs:latest
+    container_name: netlocal_seaweedfs_s3
+    command: s3 -filer=netlocal_seaweedfs_filer:8888
+    depends_on:
+      - seaweedfs-filer
+    ports:
+      - "9000:8333"
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=storage"
+    restart: unless-stopped
+
+  seaweedfs-filer:
+    image: chrislusf/seaweedfs:latest
+    container_name: netlocal_seaweedfs_filer
+    command: filer -master=netlocal_seaweedfs_master:9333
+    depends_on:
+      - seaweedfs-master
+    volumes:
+      - seaweedfs_filer:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=storage"
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  seaweedfs_master:
+  seaweedfs_volume:
+  seaweedfs_filer:

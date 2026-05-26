@@ -1,0 +1,17 @@
+services:
+  health:
+    image: nginx:alpine
+    container_name: netlocal_health
+    volumes:
+      - ./health.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=health"
+      - "traefik.enable=true"
+      - "traefik.http.routers.health.rule=Host(`health.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
+
+networks:
+  localnet_default:
+    external: true

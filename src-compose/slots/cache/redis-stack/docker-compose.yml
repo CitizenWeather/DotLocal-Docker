@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: netlocal_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - cache_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=cache"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    stop_grace_period: 30s
+
+volumes:
+  cache_data:

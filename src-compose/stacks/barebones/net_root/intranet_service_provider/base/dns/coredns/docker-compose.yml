@@ -1,0 +1,21 @@
+services:
+  coredns:
+    image: coredns/coredns:latest
+    container_name: netlocal_coredns
+    command: -conf /etc/coredns/Corefile
+    volumes:
+      - ./Corefile:/etc/coredns/Corefile:ro
+      - ./zones:/etc/coredns/zones:ro
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.2
+      localnet_default:
+    labels:
+      - "netlocal.component=dns"
+    stop_grace_period: 30s
+
+networks:
+  localnet_backbone:
+    external: true
+  localnet_default:
+    external: true

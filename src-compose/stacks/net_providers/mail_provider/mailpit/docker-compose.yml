@@ -1,0 +1,19 @@
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: netlocal_mailpit
+    environment:
+      - MP_SMTP_AUTH_ACCEPT_ANY=true
+      - MP_SMTP_AUTH_ALLOW_INSECURE=true
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=mail"
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailpit.rule=Host(`mail.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
+    stop_grace_period: 30s
+
+networks:
+  localnet_default:
+    external: true

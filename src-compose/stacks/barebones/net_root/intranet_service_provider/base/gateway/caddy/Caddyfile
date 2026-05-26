@@ -1,0 +1,13 @@
+{
+  acme_ca https://ca.{$NETLOCAL_ROOT_DOMAIN}/acme/acme/directory
+  acme_ca_root /etc/ssl/certs/netlocal-ca.pem
+}
+
+*.{$NETLOCAL_ROOT_DOMAIN} {
+  tls {
+    ca https://ca.{$NETLOCAL_ROOT_DOMAIN}/acme/acme/directory
+  }
+  reverse_proxy {
+    to {upstream}
+  }
+}

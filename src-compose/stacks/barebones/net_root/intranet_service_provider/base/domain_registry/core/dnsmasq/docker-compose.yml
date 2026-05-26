@@ -1,0 +1,19 @@
+services:
+  dnsmasq:
+    image: andyshinn/dnsmasq:latest
+    container_name: netlocal_dnsmasq
+    cap_add:
+      - NET_ADMIN
+    command: >
+      --no-resolv
+      --server=169.254.0.2
+      --listen-address=0.0.0.0
+      --bind-interfaces
+    network_mode: host
+    labels:
+      - "netlocal.component=dns-forwarder"
+    stop_grace_period: 30s
+
+networks:
+  localnet_backbone:
+    external: true

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  chrony:
+    image: cturra/ntp:latest
+    container_name: netlocal_chrony
+    environment:
+      NTP_SERVERS: ${NTP_SERVERS:-time.cloudflare.com,pool.ntp.org}
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=ntp"
+    restart: unless-stopped
+    stop_grace_period: 30s

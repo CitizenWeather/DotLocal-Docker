@@ -1,4 +1,4 @@
-# NetLocal (DotLocal-Docker)
+# DotLocal _(Docker)_
 
 A self-hosted local network infrastructure stack driven entirely by Docker Compose. NetLocal provisions a complete `.local` intranet — DNS, certificate authority, service registry, API gateway, database, cache, object storage, messaging, email, and observability — running entirely on your machine or LAN.
 

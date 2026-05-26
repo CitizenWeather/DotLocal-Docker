@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  powerdns-init:
+    image: postgres:16-alpine
+    container_name: netlocal_powerdns_init
+    restart: "no"
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    command: >
+      sh -c "
+        until pg_isready -h netlocal_postgres -U postgres; do sleep 2; done;
+        psql -h netlocal_postgres -U postgres -tc \"SELECT 1 FROM pg_database WHERE datname='powerdns'\" | grep -q 1 ||
+          psql -h netlocal_postgres -U postgres -c 'CREATE DATABASE powerdns;';
+        psql -h netlocal_postgres -U postgres -d powerdns -f /schema.sql
+      "
+    volumes:
+      - ./config/schema.sql:/schema.sql:ro
+    networks:
+      - localnet_default
+
+  powerdns:
+    image: powerdns/pdns-auth:4.8.0
+    container_name: netlocal_powerdns
+    depends_on:
+      powerdns-init:
+        condition: service_completed_successfully
+    environment:
+      PDNS_AUTH_API: "yes"
+      PDNS_AUTH_API_KEY: ${POWERDNS_API_KEY}
+      PDNS_AUTH_WEBSERVER: "yes"
+      PDNS_AUTH_WEBSERVER_ADDRESS: "0.0.0.0"
+      PDNS_AUTH_WEBSERVER_PORT: "8081"
+      PDNS_AUTH_WEBSERVER_ALLOW_FROM: "0.0.0.0/0"
+      PDNS_AUTH_LAUNCH: "gpgsql"
+      PDNS_AUTH_GPGSQL_HOST: "netlocal_postgres"
+      PDNS_AUTH_GPGSQL_PORT: "5432"
+      PDNS_AUTH_GPGSQL_DBNAME: "powerdns"
+      PDNS_AUTH_GPGSQL_USER: "postgres"
+      PDNS_AUTH_GPGSQL_PASSWORD: ${POSTGRES_PASSWORD}
+      PDNS_AUTH_GPGSQL_DNSSEC: "no"
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.3
+      localnet_default:
+    labels:
+      - "netlocal.component=registry"
+      - "caddy=${NETLOCAL_ROOT_DOMAIN:-net.local}"
+      - "caddy.reverse_proxy=registrar.{{upstreams 8081}}"
+    restart: unless-stopped
+    stop_grace_period: 30s

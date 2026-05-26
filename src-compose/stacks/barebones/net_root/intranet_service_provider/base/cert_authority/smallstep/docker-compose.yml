@@ -1,0 +1,29 @@
+services:
+  step-ca:
+    image: smallstep/step-ca:latest
+    container_name: netlocal_step_ca
+    environment:
+      - DOCKER_STEPCA_INIT_NAME=NetLocal CA
+      - DOCKER_STEPCA_INIT_DNS_NAMES=ca.${NETLOCAL_ROOT_DOMAIN:-net.local},169.254.0.4
+      - DOCKER_STEPCA_INIT_REMOTE_MANAGEMENT=true
+      - DOCKER_STEPCA_INIT_ACME=true
+    volumes:
+      - step_ca_data:/home/step
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.4
+      localnet_default:
+    labels:
+      - "netlocal.component=ca"
+      - "traefik.enable=true"
+      - "traefik.http.routers.step-ca.rule=Host(`ca.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
+
+volumes:
+  step_ca_data:
+
+networks:
+  localnet_backbone:
+    external: true
+  localnet_default:
+    external: true

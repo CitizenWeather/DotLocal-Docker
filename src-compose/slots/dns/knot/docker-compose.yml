@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  knot:
+    image: cznic/knot:latest
+    container_name: netlocal_knot
+    command: knotd -c /etc/knot/knot.conf
+    volumes:
+      - ./config/knot.conf:/etc/knot/knot.conf:ro
+      - ./config/zones:/etc/knot/zones:ro
+      - knot_data:/var/lib/knot
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.2
+    labels:
+      - "netlocal.component=dns"
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  knot_data:

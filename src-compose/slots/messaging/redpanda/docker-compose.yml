@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: netlocal_redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://netlocal_redpanda:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --schema-registry-addr=0.0.0.0:8081
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=netlocal_redpanda:33145
+      - --smp=1
+      - --memory=512M
+      - --overprovisioned
+    ports:
+      - "9092:9092"
+      - "8082:8082"
+    volumes:
+      - messaging_data:/var/lib/redpanda/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=messaging"
+    restart: unless-stopped
+
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: netlocal_redpanda_console
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+    command: >
+      sh -c "printf 'kafka:\n  brokers: [\"netlocal_redpanda:9092\"]\n' > /tmp/config.yml && /app/console"
+    depends_on:
+      - redpanda
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=messaging"
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  messaging_data:

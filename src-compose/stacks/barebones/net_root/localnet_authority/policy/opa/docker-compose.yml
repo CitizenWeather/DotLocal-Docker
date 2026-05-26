@@ -1,0 +1,16 @@
+services:
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: netlocal_opa
+    command: run --server --addr=0.0.0.0:8181
+    volumes:
+      - ./policies:/policies:ro
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=policy"
+    stop_grace_period: 30s
+
+networks:
+  localnet_default:
+    external: true

@@ -1,0 +1,31 @@
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: localnet_default
+
+certificatesResolvers:
+  localca:
+    acme:
+      caServer: "https://ca.net.local/acme/acme/directory"
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+log:
+  level: INFO
+  format: json

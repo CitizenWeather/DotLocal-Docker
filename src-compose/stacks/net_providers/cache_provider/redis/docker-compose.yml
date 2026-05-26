@@ -1,0 +1,18 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: netlocal_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=cache"
+    stop_grace_period: 30s
+
+volumes:
+  redis_data:
+
+networks:
+  localnet_default:
+    external: true

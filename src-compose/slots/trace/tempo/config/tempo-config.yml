@@ -1,0 +1,22 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http: { }
+
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+
+compactor:
+  compaction:
+    block_retention: 24h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks

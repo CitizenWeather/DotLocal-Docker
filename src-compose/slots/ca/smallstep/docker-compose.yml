@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  step-ca:
+    image: smallstep/step-ca:0.27.0
+    container_name: netlocal_step_ca
+    environment:
+      DOCKER_STEPCA_INIT_NAME: "NetLocal CA"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "ca.${NETLOCAL_ROOT_DOMAIN:-net.local},169.254.0.4,localhost"
+      DOCKER_STEPCA_INIT_REMOTE_MANAGEMENT: "false"
+      DOCKER_STEPCA_INIT_ACME: "true"
+    volumes:
+      - ca_data:/home/step
+    networks:
+      localnet_backbone:
+        ipv4_address: 169.254.0.4
+    labels:
+      - "netlocal.component=ca"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-check-certificate -q -O- https://127.0.0.1:9000/health || exit 1" ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    stop_grace_period: 30s
+
+volumes:
+  ca_data:

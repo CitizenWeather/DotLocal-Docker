@@ -1,0 +1,23 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: netlocal_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${POSTGRES_PASSWORD}
+      - MYSQL_DATABASE=netlocal
+      - MYSQL_USER=netlocal
+      - MYSQL_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=database"
+    stop_grace_period: 30s
+
+volumes:
+  mysql_data:
+
+networks:
+  localnet_default:
+    external: true

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: netlocal_opa
+    command: run --server --log-format=json --addr=0.0.0.0:8181
+    ports:
+      - "8181:8181"
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=policy"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/opa", "eval", "--fail", "data" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    stop_grace_period: 30s

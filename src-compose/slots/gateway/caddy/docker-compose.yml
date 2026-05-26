@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:latest
+    container_name: netlocal_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NETLOCAL_ROOT_DOMAIN: ${NETLOCAL_ROOT_DOMAIN:-net.local}
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - localnet_backbone
+      - localnet_default
+    labels:
+      - "netlocal.component=gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/" ]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 5s
+    stop_grace_period: 30s
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: netlocal_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
+      MYSQL_DATABASE: netlocal
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=db"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 30s
+
+volumes:
+  db_data:

@@ -1,0 +1,15 @@
+services:
+  whoisd:
+    image: likexian/whois-server:latest
+    container_name: netlocal_whoisd
+    environment:
+      - WHOIS_DOMAIN=${NETLOCAL_ROOT_DOMAIN:-net.local}
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=whois"
+    stop_grace_period: 30s
+
+networks:
+  localnet_default:
+    external: true

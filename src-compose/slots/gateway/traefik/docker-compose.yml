@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: netlocal_traefik
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_data:/data
+    networks:
+      - localnet_backbone
+      - localnet_default
+    labels:
+      - "netlocal.component=gateway"
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls.certresolver=localca"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "traefik", "healthcheck", "--ping" ]
+      interval: 15s
+      timeout: 3s
+      retries: 4
+      start_period: 5s
+    stop_grace_period: 30s
+
+volumes:
+  traefik_data:

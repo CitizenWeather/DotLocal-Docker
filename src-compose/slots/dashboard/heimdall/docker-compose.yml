@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  heimdall:
+    image: linuxserver/heimdall:latest
+    container_name: netlocal_heimdall
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+    volumes:
+      - dashboard_data:/config
+    networks:
+      - localnet_default
+    labels:
+      - "netlocal.component=dashboard"
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  dashboard_data:
