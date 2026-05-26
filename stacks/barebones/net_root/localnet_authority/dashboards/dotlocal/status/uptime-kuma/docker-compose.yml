@@ -10,6 +10,7 @@ services:
       - "netlocal.component=status"
       - "traefik.enable=true"
       - "traefik.http.routers.uptime-kuma.rule=Host(`status.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   uptime_kuma_data:

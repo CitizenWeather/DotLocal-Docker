@@ -10,6 +10,7 @@ services:
       localnet_default:
     labels:
       - "netlocal.component=ntp"
+    stop_grace_period: 30s
 
 networks:
   localnet_backbone:

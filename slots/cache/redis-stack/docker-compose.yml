@@ -18,6 +18,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    stop_grace_period: 30s
 
 volumes:
   cache_data:

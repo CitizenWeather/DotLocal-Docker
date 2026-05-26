@@ -11,3 +11,4 @@ services:
     labels:
       - "netlocal.component=ntp"
     restart: unless-stopped
+    stop_grace_period: 30s

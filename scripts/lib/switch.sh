@@ -1,7 +1,28 @@
 #!/bin/bash
-# Generic slot switcher.
-# Usage: make switch SLOT=<slot> IMPL=<impl>
-#   or:  ./scripts/lib/switch.sh <slot> <impl>
+# Switch a slot implementation and reconcile the running stack.
+#
+# Purpose: Changes a swappable slot implementation (DNS, gateway, database, etc.)
+#          and applies the change via zero-downtime apply (preserves volumes).
+#
+# Usage: ./scripts/lib/switch.sh <slot> <impl>
+#   or:  make switch SLOT=<slot> IMPL=<impl>
+#
+# Arguments:
+#   $1  Slot name (dns, ca, gateway, db, cache, storage, messaging, policy, etc.)
+#   $2  New implementation name (e.g., coredns, caddy, postgres)
+#
+# Examples:
+#   ./scripts/lib/switch.sh dns bind9
+#   ./scripts/lib/switch.sh gateway traefik
+#   ./scripts/lib/switch.sh db mysql
+#
+# Environment:
+#   SWITCH_LEGACY=1  Use legacy `make down && make up` instead of zero-downtime apply
+#   NETLOCAL_ROOT_DOMAIN  Local TLD (default: net.local)
+#
+# Exit codes:
+#   0  Successfully switched and applied
+#   1  Invalid slot, missing compose file, or apply failed
 
 set -e
 

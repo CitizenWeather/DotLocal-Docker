@@ -16,6 +16,7 @@ services:
       - "netlocal.component=iot"
       - "traefik.enable=true"
       - "traefik.http.routers.chirpstack.rule=Host(`iot.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 networks:
   localnet_default:

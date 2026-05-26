@@ -11,6 +11,7 @@ services:
     labels:
       - "netlocal.component=uptime"
     restart: unless-stopped
+    stop_grace_period: 30s
 
 volumes:
   uptime_data:

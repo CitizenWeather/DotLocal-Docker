@@ -10,6 +10,7 @@ services:
       - "netlocal.component=health"
       - "traefik.enable=true"
       - "traefik.http.routers.health.rule=Host(`health.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 networks:
   localnet_default:

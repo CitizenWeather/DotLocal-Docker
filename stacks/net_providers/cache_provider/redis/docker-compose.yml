@@ -8,6 +8,7 @@ services:
       - localnet_default
     labels:
       - "netlocal.component=cache"
+    stop_grace_period: 30s
 
 volumes:
   redis_data:

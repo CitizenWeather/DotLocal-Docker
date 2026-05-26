@@ -22,4 +22,4 @@ services:
     networks:
       - localnet_default
     labels:
-      - "netlocal.component=messaging"
+      - "netlocal.component=messaging"    stop_grace_period: 30s

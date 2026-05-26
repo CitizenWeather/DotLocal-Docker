@@ -26,6 +26,7 @@ services:
       - "netlocal.component=lab"
       - "traefik.enable=true"
       - "traefik.http.routers.plantuml.rule=Host(`diagrams.${NETLOCAL_ROOT_DOMAIN:-net.local}`)"
+    stop_grace_period: 30s
 
 volumes:
   n8n_data:

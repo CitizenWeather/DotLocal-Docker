@@ -12,6 +12,7 @@ services:
       - localnet_default
     labels:
       - "netlocal.component=database"
+    stop_grace_period: 30s
 
 volumes:
   postgres_data:

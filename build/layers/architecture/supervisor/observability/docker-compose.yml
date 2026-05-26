@@ -50,6 +50,7 @@ services:
       - localnet_default
     labels:
       - "netlocal.component=observability"
+    stop_grace_period: 30s
 
 volumes:
   grafana_data:

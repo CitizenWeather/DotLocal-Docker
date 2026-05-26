@@ -15,6 +15,7 @@ services:
     labels:
       - "netlocal.component=dns"
     restart: unless-stopped
+    stop_grace_period: 30s
 
 volumes:
   knot_data:
